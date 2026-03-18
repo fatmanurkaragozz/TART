@@ -1,0 +1,19 @@
+@import url('https://fonts.googleapis.com/css2?family=Special+Elite&family=Courier+Prime:wght@400;700&display=swap');
+
+body {
+  font-family: 'Courier Prime', 'Courier New', 'Courier', monospace;
+  letter-spacing: 0.02em;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Special Elite', 'Courier New', monospace;
+  letter-spacing: 0.03em;
+}
+
+.typewriter {
+  font-family: 'Special Elite', 'Courier New', monospace;
+}
+
+.handwritten {
+  font-family: 'Courier Prime', 'Courier New', monospace;
+}
