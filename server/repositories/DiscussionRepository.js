@@ -1,7 +1,7 @@
-import { query } from '../config/database.js';
+import prisma from '../config/prisma.js';
 
 /**
- * @description Tartışma Veri Erişim Katmanı (PostgreSQL / pg)
+ * @description Tartışma Veri Erişim Katmanı (Prisma ORM)
  */
 class DiscussionRepository {
     /**
@@ -9,39 +9,55 @@ class DiscussionRepository {
      * @param   {object} discussionData
      */
     async create(discussionData) {
-        const { title, content, author, tags } = discussionData;
+        const { title, content, authorId, tags } = discussionData;
         
-        const sql = `
-            INSERT INTO discussions (title, content, author, tags)
-            VALUES ($1, $2, $3, $4)
-            RETURNING *
-        `;
-        
-        const values = [title, content, author, JSON.stringify(tags)];
-        const result = await query(sql, values);
-        
-        return result.rows[0];
+        return await prisma.discussion.create({
+            data: {
+                title,
+                content,
+                authorId,
+                tags: tags || []
+            }
+        });
     }
 
     /**
      * @desc    Tüm tartışmaları getir
      */
     async findAll() {
-        const sql = 'SELECT * FROM discussions ORDER BY created_at DESC';
-        const result = await query(sql);
-        
-        return result.rows;
+        return await prisma.discussion.findMany({
+            orderBy: {
+                createdAt: 'desc'
+            },
+            include: {
+                author: {
+                    select: {
+                        username: true,
+                        role: true
+                    }
+                }
+            }
+        });
     }
 
     /**
      * @desc    ID'ye göre tartışma getir
-     * @param   {string|number} id
+     * @param   {string} id
      */
     async findById(id) {
-        const sql = 'SELECT * FROM discussions WHERE id = $1';
-        const result = await query(sql, [id]);
-        
-        return result.rows[0];
+        return await prisma.discussion.findUnique({
+            where: {
+                id: id
+            },
+            include: {
+                author: {
+                    select: {
+                        username: true,
+                        role: true
+                    }
+                }
+            }
+        });
     }
 }
 

@@ -1,0 +1,33 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id          String       @id @default(uuid()) @db.Uuid
+  username    String       @unique
+  email       String       @unique
+  password    String
+  role        String       @default("user")
+  createdAt   DateTime     @default(now()) @map("created_at")
+  discussions Discussion[]
+
+  @@map("users")
+}
+
+model Discussion {
+  id        String   @id @default(uuid()) @db.Uuid
+  title     String
+  content   String   @db.Text
+  authorId  String   @map("author_id") @db.Uuid
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  tags      Json     @default("[]")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("discussions")
+}

@@ -1,14 +1,18 @@
 import 'dotenv/config';
 import app from './app.js';
-import pool from './config/database.js';
+import prisma from './config/prisma.js';
 
-pool.query('SELECT NOW()', (err, res) => {
-    if (err) {
-        console.error('❌ Veritabanı Bağlantı Testi Başarısız!', err);
-    } else {
-        console.log('✅ Veritabanı Bağlantısı Doğrulandı:', res.rows[0].now);
+// 1. Veritabanı Bağlantı Testi (Prisma)
+async function testConnection() {
+    try {
+        await prisma.$connect();
+        console.log('✅ Prisma üzerinden Veritabanı Bağlantısı Doğrulandı');
+    } catch (err) {
+        console.error('❌ Prisma Bağlantı Testi Başarısız!', err);
     }
-});
+}
+
+testConnection();
 
 // 2. Sunucuyu Başlat
 const PORT = process.env.PORT || 5000;
@@ -34,5 +38,6 @@ process.on('SIGTERM', () => {
     console.log('👋 SIGTERM ALINDI. Sunucu düzgünce kapatılıyor...');
     server.close(() => {
         console.log('💥 Süreç sonlandırıldı!');
+        prisma.$disconnect();
     });
 });
