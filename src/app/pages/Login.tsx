@@ -4,6 +4,8 @@ import { Mail, Lock } from "lucide-react";
 import { useNavigate } from "react-router";
 import { NavLink } from "../components/NavLink";
 import { DevNav } from "../components/DevNav";
+import authService from "../../services/authService";
+import { toast } from "sonner";
 
 export default function Login() {
   const [formData, setFormData] = useState({
@@ -22,28 +24,40 @@ export default function Login() {
     setErrors({ ...errors, [field]: "" });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
-    // Mock validation
+    // Client-side validation
     const newErrors = {
       email: "",
       password: "",
     };
     
-    if (!formData.email) newErrors.email = "E-posta gerekli";
-    if (!formData.password) newErrors.password = "Şifre gerekli";
+    let hasClientErrors = false;
+    if (!formData.email) { newErrors.email = "E-posta gerekli"; hasClientErrors = true; }
+    if (!formData.password) { newErrors.password = "Şifre gerekli"; hasClientErrors = true; }
     
-    setErrors(newErrors);
+    if (hasClientErrors) {
+      setErrors(newErrors);
+      setIsLoading(false);
+      return;
+    }
     
-    // Eğer hata yoksa Home sayfasına yönlendir
-    if (!newErrors.email && !newErrors.password) {
+    try {
+      await authService.login({
+        email: formData.email,
+        password: formData.password
+      });
+
+      toast.success("Giriş başarılı! Yönlendiriliyorsunuz...");
+      
       setTimeout(() => {
-        setIsLoading(false);
         navigate("/home");
       }, 1000);
-    } else {
+    } catch (error: any) {
+      toast.error(error.message || "Giriş yapılamadı");
+    } finally {
       setIsLoading(false);
     }
   };

@@ -4,6 +4,8 @@ import { Mail, Lock, User } from "lucide-react";
 import { useNavigate } from "react-router";
 import { NavLink } from "../components/NavLink";
 import { DevNav } from "../components/DevNav";
+import authService from "../../services/authService";
+import { toast } from "sonner";
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -26,11 +28,11 @@ export default function Register() {
     setErrors({ ...errors, [field]: "" });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
-    // Mock validation
+    // Client-side validation
     const newErrors = {
       name: "",
       email: "",
@@ -38,23 +40,37 @@ export default function Register() {
       confirmPassword: "",
     };
     
-    if (!formData.name) newErrors.name = "İsim gerekli";
-    if (!formData.email) newErrors.email = "E-posta gerekli";
-    if (!formData.password) newErrors.password = "Şifre gerekli";
+    let hasClientErrors = false;
+    if (!formData.name) { newErrors.name = "İsim gerekli"; hasClientErrors = true; }
+    if (!formData.email) { newErrors.email = "E-posta gerekli"; hasClientErrors = true; }
+    if (!formData.password) { newErrors.password = "Şifre gerekli"; hasClientErrors = true; }
     if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = "Şifreler eşleşmiyor";
+      hasClientErrors = true;
     }
     
-    setErrors(newErrors);
+    if (hasClientErrors) {
+      setErrors(newErrors);
+      setIsLoading(false);
+      return;
+    }
     
-    // Eğer hata yoksa Home sayfasına yönlendir
-    const hasErrors = Object.values(newErrors).some(error => error !== "");
-    if (!hasErrors) {
+    try {
+      await authService.register({
+        username: formData.name, // Schema'da username olarak geçiyor
+        email: formData.email,
+        password: formData.password
+      });
+
+      toast.success("Kayıt başarılı! Giriş yapabilirsiniz.");
+      
+      // Kayıt sonrası otomatik login veya login sayfasına yönlendirme
       setTimeout(() => {
-        setIsLoading(false);
-        navigate("/home");
-      }, 1000);
-    } else {
+        navigate("/login");
+      }, 1500);
+    } catch (error: any) {
+      toast.error(error.message || "Kayıt sırasında bir hata oluştu");
+    } finally {
       setIsLoading(false);
     }
   };

@@ -3,6 +3,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import cors from 'cors';
 import discussionRoutes from './routes/discussionRoutes.js';
+import authRoutes from './routes/authRoutes.js';
 import errorHandler from './middleware/errorHandler.js';
 import ApiError from './utils/ApiError.js';
 
@@ -27,6 +28,7 @@ app.use(cors({
 app.use(express.json({ limit: '10kb' })); 
 
 // 5. Rotalar
+app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/discussions', discussionRoutes);
 
 // 6. 404
