@@ -2,6 +2,7 @@ import { useState } from "react";
 import { motion } from "motion/react";
 import { ArrowLeft, Tag as TagIcon } from "lucide-react";
 import { DevNav } from "../components/DevNav";
+import discussionService from "../../services/discussionService";
 
 const availableTags = [
   "Eğitim",
@@ -20,6 +21,8 @@ export default function CreateTopic() {
     content: "",
     tags: [] as string[],
   });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const toggleTag = (tag: string) => {
     setFormData((prev) => ({
@@ -30,13 +33,24 @@ export default function CreateTopic() {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Mock submission
-    console.log("Creating topic:", formData);
-    // Redirect to home
-    window.location.href = "/home";
+    setLoading(true);
+    setError("");
+
+    try {
+      // API çağrısı
+      await discussionService.createDiscussion(formData);
+      
+      // Başarılı ise ana sayfaya yönlendir
+      window.location.href = "/home";
+    } catch (err: any) {
+      setError(err.message || "Tartışma oluşturulurken bir hata oluştu");
+    } finally {
+      setLoading(false);
+    }
   };
+
 
   return (
     <div
@@ -124,8 +138,21 @@ export default function CreateTopic() {
             Düşünceni paylaş, topluluğu tartışmaya davet et
           </p>
 
+          {/* Error Message */}
+          {error && (
+            <div 
+              className="mb-6 p-4 text-sm handwritten border-2" 
+              style={{ background: "#FFF5F5", color: "#C44536", borderColor: "#C44536" }}
+            >
+              {error}
+            </div>
+          )}
+
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* ... title and content fields remain same ... */}
+            {/* (I will replace the full block for clarity) */}
+
             {/* Title */}
             <div>
               <label
@@ -252,21 +279,24 @@ export default function CreateTopic() {
             <div className="flex gap-3 pt-4">
               <motion.button
                 type="submit"
+                disabled={loading}
                 whileHover={{ scale: 1.02, y: -2 }}
                 whileTap={{ scale: 0.98 }}
                 className="flex-1 py-3 typewriter"
                 style={{
-                  background: "#2C2C28",
+                  background: loading ? "#6B6B5F" : "#2C2C28",
                   color: "#F5F5F0",
-                  border: "2px solid #2C2C28",
+                  border: `2px solid ${loading ? "#6B6B5F" : "#2C2C28"}`,
                   borderRadius: "2px",
                   fontSize: "0.95rem",
                   boxShadow: "3px 3px 0px rgba(107, 107, 95, 0.2)",
                   transition: "all 0.2s ease",
+                  cursor: loading ? "not-allowed" : "pointer"
                 }}
               >
-                Tartışmayı Yayınla
+                {loading ? "Yayınlanıyor..." : "Tartışmayı Yayınla"}
               </motion.button>
+
               <motion.a
                 href="/home"
                 whileHover={{ scale: 1.02 }}

@@ -1,47 +1,82 @@
 import { motion } from "motion/react";
-import { ArrowLeft, MessageSquare, ThumbsUp, Flag } from "lucide-react";
-import { useState } from "react";
+import { ArrowLeft, MessageSquare, ThumbsUp, Flag, Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useParams, Link } from "react-router";
 import { DevNav } from "../components/DevNav";
-
-const mockTopic = {
-  id: "1",
-  title: "Üniversitelerde not sistemi adil mi?",
-  content: `4.0 sisteminin öğrenciler üzerindeki baskısı hakkında düşüncelerinizi paylaşalım. Başarı sadece notlarla mı ölçülmeli?
-
-Not sisteminin öğrencileri "başarılı" ve "başarısız" diye kategorize etmesi, gerçekten öğrenme sürecine katkı sağlıyor mu? Yoksa sadece bir sıralama aracı mı?
-
-Sizce alternatif değerlendirme yöntemleri neler olabilir?`,
-  author: "BD",
-  tags: ["Eğitim", "Sistem Eleştirisi"],
-  createdAt: "2 saat önce",
-  colorLevel: 1,
-};
-
-const mockReplies = [
-  {
-    id: "1",
-    author: "AY",
-    content: "Bence not sistemi gerçekten de çok kısıtlayıcı. Öğrencilerin gerçek potansiyelini gösteremiyor, sadece belirli bir formata ne kadar uyum sağladıklarını ölçüyor.",
-    createdAt: "1 saat önce",
-    likes: 3,
-  },
-  {
-    id: "2",
-    author: "MK",
-    content: "Katılıyorum. Ama tamamen notları kaldırmak da çözüm olmayabilir. Belki daha kapsayıcı bir değerlendirme sistemi geliştirebiliriz - proje bazlı, peer review içeren bir sistem gibi.",
-    createdAt: "45 dakika önce",
-    likes: 1,
-  },
-];
+import discussionService from "../../services/discussionService";
+import commentService from "../../services/commentService";
+import { toast } from "sonner";
 
 export default function TopicDetail() {
+  const { id } = useParams<{ id: string }>();
+  const [topic, setTopic] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [replyText, setReplyText] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmitReply = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("Submitting reply:", replyText);
-    setReplyText("");
+  useEffect(() => {
+    if (id) {
+      fetchTopicDetails();
+    }
+  }, [id]);
+
+  const fetchTopicDetails = async () => {
+    try {
+      setLoading(true);
+      const response = await discussionService.getDiscussionById(id!);
+      setTopic(response.data);
+    } catch (error: any) {
+      console.error("Tartışma detayları çekilirken hata:", error);
+      toast.error(error.message || "Tartışma yüklenemedi.");
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const handleSubmitReply = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!replyText.trim()) return;
+
+    try {
+      setSubmitting(true);
+      await commentService.addComment({
+        content: replyText,
+        discussionId: id!,
+      });
+      
+      toast.success("Yanıtınız başarıyla eklendi.");
+      setReplyText("");
+      // Yeniden çekerek listeyi güncelle
+      fetchTopicDetails();
+    } catch (error: any) {
+      console.error("Yanıt gönderilirken hata:", error);
+      toast.error(error.message || "Yanıt gönderilemedi.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "#FAFAF5" }}>
+        <div className="text-center">
+          <Loader2 className="w-10 h-10 animate-spin mx-auto mb-4" style={{ color: "#6B6B5F" }} />
+          <p className="handwritten" style={{ color: "#6B6B5F" }}>Yükleniyor...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!topic) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "#FAFAF5" }}>
+        <div className="text-center">
+          <p className="typewriter mb-4" style={{ color: "#2C2C28" }}>Tartışma bulunamadı.</p>
+          <Link to="/home" className="handwritten" style={{ color: "#4A90E2" }}>Ana sayfaya dön</Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -85,18 +120,14 @@ export default function TopicDetail() {
 
       <div className="max-w-[900px] mx-auto px-6 py-12 relative z-10">
         {/* Back Button */}
-        <motion.a
-          href="/home"
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
+        <Link
+          to="/home"
           className="inline-flex items-center gap-2 mb-8 text-sm handwritten transition-colors"
-          style={{ color: "#6B6B5F" }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = "#2C2C28")}
-          onMouseLeave={(e) => (e.currentTarget.style.color = "#6B6B5F")}
+          style={{ color: "#6B6B5F", textDecoration: 'none' }}
         >
           <ArrowLeft className="w-4 h-4" />
           Tartışmalara dön
-        </motion.a>
+        </Link>
 
         {/* Main Topic Card */}
         <motion.div
@@ -123,20 +154,20 @@ export default function TopicDetail() {
                   borderRadius: "2px",
                 }}
               >
-                {mockTopic.author}
+                {topic.author?.username?.substring(0, 2).toUpperCase() || "??"}
               </div>
               <div>
                 <div
                   className="typewriter"
                   style={{ fontSize: "0.9rem", color: "#2C2C28" }}
                 >
-                  {mockTopic.author}
+                  {topic.author?.username || "Bilinmeyen"}
                 </div>
                 <div
                   className="text-xs handwritten"
                   style={{ color: "#9B9B8F" }}
                 >
-                  {mockTopic.createdAt}
+                  {new Date(topic.createdAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}
                 </div>
               </div>
             </div>
@@ -167,12 +198,12 @@ export default function TopicDetail() {
               lineHeight: 1.3,
             }}
           >
-            {mockTopic.title}
+            {topic.title}
           </h1>
 
           {/* Tags */}
           <div className="flex flex-wrap gap-2 mb-6">
-            {mockTopic.tags.map((tag, index) => (
+            {topic.tags?.map((tag: any, index: number) => (
               <span
                 key={index}
                 className="px-2.5 py-1 text-xs handwritten"
@@ -198,7 +229,7 @@ export default function TopicDetail() {
               whiteSpace: "pre-wrap",
             }}
           >
-            {mockTopic.content}
+            {topic.content}
           </div>
 
           {/* Color accent underline */}
@@ -233,93 +264,99 @@ export default function TopicDetail() {
                 fontWeight: 400,
               }}
             >
-              Yanıtlar ({mockReplies.length})
+              Yanıtlar ({topic.comments?.length || 0})
             </h2>
           </div>
 
           <div className="space-y-4">
-            {mockReplies.map((reply, index) => (
-              <motion.div
-                key={reply.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.3, delay: 0.3 + index * 0.05 }}
-                className="p-5"
-                style={{
-                  background: "#FFFEF5",
-                  border: "1px solid #D4D2C8",
-                  borderLeft: "3px solid #E85D4E",
-                  borderRadius: "2px",
-                  boxShadow: "2px 2px 0px rgba(107, 107, 95, 0.1)",
-                }}
-              >
-                {/* Reply Header */}
-                <div className="flex items-center gap-3 mb-3">
-                  <div
-                    className="w-8 h-8 flex items-center justify-center typewriter"
+            {topic.comments && topic.comments.length > 0 ? (
+              topic.comments.map((reply: any, index: number) => (
+                <motion.div
+                  key={reply.id}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.3, delay: 0.3 + index * 0.05 }}
+                  className="p-5"
+                  style={{
+                    background: "#FFFEF5",
+                    border: "1px solid #D4D2C8",
+                    borderLeft: "3px solid #E85D4E",
+                    borderRadius: "2px",
+                    boxShadow: "2px 2px 0px rgba(107, 107, 95, 0.1)",
+                  }}
+                >
+                  {/* Reply Header */}
+                  <div className="flex items-center gap-3 mb-3">
+                    <div
+                      className="w-8 h-8 flex items-center justify-center typewriter"
+                      style={{
+                        background: "#E8E6E0",
+                        color: "#2C2C28",
+                        fontSize: "0.75rem",
+                        borderRadius: "2px",
+                      }}
+                    >
+                      {reply.author?.username?.substring(0, 2).toUpperCase() || "??"}
+                    </div>
+                    <div>
+                      <div
+                        className="typewriter"
+                        style={{ fontSize: "0.85rem", color: "#2C2C28" }}
+                      >
+                        {reply.author?.username || "Anonim"}
+                      </div>
+                      <div
+                        className="text-xs handwritten"
+                        style={{ color: "#9B9B8F" }}
+                      >
+                        {new Date(reply.createdAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' })}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Reply Content */}
+                  <p
+                    className="mb-3 handwritten"
                     style={{
-                      background: "#E8E6E0",
                       color: "#2C2C28",
-                      fontSize: "0.75rem",
-                      borderRadius: "2px",
+                      fontSize: "0.95rem",
+                      lineHeight: 1.7,
                     }}
                   >
-                    {reply.author}
-                  </div>
-                  <div>
-                    <div
-                      className="typewriter"
-                      style={{ fontSize: "0.85rem", color: "#2C2C28" }}
-                    >
-                      {reply.author}
-                    </div>
-                    <div
-                      className="text-xs handwritten"
-                      style={{ color: "#9B9B8F" }}
-                    >
-                      {reply.createdAt}
-                    </div>
-                  </div>
-                </div>
+                    {reply.content}
+                  </p>
 
-                {/* Reply Content */}
-                <p
-                  className="mb-3 handwritten"
-                  style={{
-                    color: "#2C2C28",
-                    fontSize: "0.95rem",
-                    lineHeight: 1.7,
-                  }}
-                >
-                  {reply.content}
-                </p>
-
-                {/* Like Button */}
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs typewriter"
-                  style={{
-                    background: "transparent",
-                    border: "1px solid #D4D2C8",
-                    borderRadius: "2px",
-                    color: "#6B6B5F",
-                    transition: "all 0.2s ease",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = "#4A90E2";
-                    e.currentTarget.style.color = "#4A90E2";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = "#D4D2C8";
-                    e.currentTarget.style.color = "#6B6B5F";
-                  }}
-                >
-                  <ThumbsUp className="w-3.5 h-3.5" />
-                  {reply.likes}
-                </motion.button>
-              </motion.div>
-            ))}
+                  {/* Like Button */}
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs typewriter"
+                    style={{
+                      background: "transparent",
+                      border: "1px solid #D4D2C8",
+                      borderRadius: "2px",
+                      color: "#6B6B5F",
+                      transition: "all 0.2s ease",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = "#4A90E2";
+                      e.currentTarget.style.color = "#4A90E2";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = "#D4D2C8";
+                      e.currentTarget.style.color = "#6B6B5F";
+                    }}
+                  >
+                    <ThumbsUp className="w-3.5 h-3.5" />
+                    {reply.votes?.length || 0}
+                  </motion.button>
+                </motion.div>
+              ))
+            ) : (
+              <div className="p-8 text-center handwritten" style={{ color: "#9B9B8F" }}>
+                Henüz yanıt yok. İlk yanıtı sen yaz!
+              </div>
+            )}
           </div>
         </motion.div>
 
@@ -372,9 +409,10 @@ export default function TopicDetail() {
 
             <motion.button
               type="submit"
+              disabled={submitting}
               whileHover={{ scale: 1.02, y: -2 }}
               whileTap={{ scale: 0.98 }}
-              className="px-6 py-2.5 typewriter"
+              className="px-6 py-2.5 typewriter flex items-center gap-2"
               style={{
                 background: "#2C2C28",
                 color: "#F5F5F0",
@@ -383,9 +421,17 @@ export default function TopicDetail() {
                 fontSize: "0.9rem",
                 boxShadow: "2px 2px 0px rgba(107, 107, 95, 0.2)",
                 transition: "all 0.2s ease",
+                opacity: submitting ? 0.7 : 1
               }}
             >
-              Yanıtla
+              {submitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Gönderiliyor...
+                </>
+              ) : (
+                "Yanıtla"
+              )}
             </motion.button>
           </form>
         </motion.div>

@@ -1,30 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import { Search, Bell, Plus, BookOpen, Tag as TagIcon } from "lucide-react";
 import { TopicCard } from "../components/TopicCard";
 import { TagFilter } from "../components/TagFilter";
 import { PromptCard } from "../components/PromptCard";
 import { DevNav } from "../components/DevNav";
-
-// Mock data - simulating a new/empty community (Level 0-1 color progression)
-const mockTopics = [
-  {
-    id: "1",
-    title: "Üniversitelerde not sistemi adil mi?",
-    preview: "4.0 sisteminin öğrenciler üzerindeki baskısı hakkında düşüncelerinizi paylaşalım. Başarı sadece notlarla mı ölçülmeli?",
-    tags: ["Eğitim", "Sistem Eleştirisi"],
-    lastActivity: "2 saat önce",
-    colorLevel: 1, // ink accent
-  },
-  {
-    id: "2",
-    title: "Kampüste ifade özgürlüğünün sınırları",
-    preview: "Üniversite kampüslerinde hangi fikirlerin tartışılabileceği ve hangi sınırların olması gerektiği üzerine...",
-    tags: ["Özgürlük", "Tartışma Kültürü"],
-    lastActivity: "5 saat önce",
-    colorLevel: 0,
-  },
-];
+import discussionService from "../../services/discussionService";
 
 const tags = [
   "Eğitim",
@@ -36,14 +17,33 @@ const tags = [
 ];
 
 export default function Home() {
+  const [topics, setTopics] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+
+  useEffect(() => {
+    fetchTopics();
+  }, []);
+
+  const fetchTopics = async () => {
+    try {
+      setLoading(true);
+      const data = await discussionService.getAllDiscussions();
+      setTopics(data.data);
+    } catch (error) {
+      console.error("Tartışmalar çekilirken hata:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const toggleTag = (tag: string) => {
     setSelectedTags((prev) =>
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
     );
   };
+
 
   return (
     <div
@@ -249,13 +249,23 @@ export default function Home() {
             </div>
 
             {/* Topic List */}
-            {mockTopics.length > 0 ? (
+            {loading ? (
+              <div className="handwritten text-center py-12" style={{ color: "#6B6B5F" }}>
+                Tartışmalar yükleniyor...
+              </div>
+            ) : topics.length > 0 ? (
               <div className="space-y-4">
-                {mockTopics.map((topic, index) => (
-                  <TopicCard key={topic.id} topic={topic} delay={index * 0.05} />
+                {topics.map((topic: any, index: number) => (
+                  <TopicCard key={topic.id} topic={{
+                    ...topic,
+                    preview: topic.content.substring(0, 150) + "...",
+                    lastActivity: "Şimdi", // Gerçek veride yoksa
+                    colorLevel: topic.voteScore > 5 ? 1 : 0
+                  }} delay={index * 0.05} />
                 ))}
               </div>
             ) : (
+
               /* Empty State */
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
