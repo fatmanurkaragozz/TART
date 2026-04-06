@@ -12,7 +12,7 @@ class AuthService {
      * @param   {object} userData
      */
     async register(userData) {
-        const { username, email, password } = userData;
+        const { username, fullName, email, password } = userData;
 
         // 1. E-posta veya Kullanıcı adı kontrolü
         const existingEmail = await UserRepository.findByEmail(email);
@@ -32,6 +32,7 @@ class AuthService {
         // 3. Kullanıcıyı Kaydet
         const newUser = await UserRepository.create({
             username,
+            fullName, // Yeni alan eklendi
             email,
             password: hashedPassword,
         });
@@ -40,6 +41,7 @@ class AuthService {
         const { password: _, ...userWithoutPassword } = newUser;
         return userWithoutPassword;
     }
+
 
     /**
      * @desc    Kullanıcı girişi (Login)

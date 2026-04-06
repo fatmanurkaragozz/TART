@@ -41,7 +41,7 @@ class DiscussionRepository {
     }
 
     /**
-     * @desc    ID'ye göre tartışma getir
+     * @desc    ID'ye göre tartışma getir (Yorumlar ve Oy Sayısı ile)
      * @param   {string} id
      */
     async findById(id) {
@@ -55,11 +55,38 @@ class DiscussionRepository {
                         username: true,
                         role: true
                     }
-                }
+                },
+                comments: {
+                    include: {
+                        author: {
+                            select: {
+                                username: true
+                            }
+                        },
+                        votes: true
+                    },
+                    orderBy: {
+                        createdAt: 'asc'
+                    }
+                },
+                votes: true
+            }
+        });
+    }
+
+    /**
+     * @desc    Tartışmayı sil
+     * @param   {string} id
+     */
+    async delete(id) {
+        return await prisma.discussion.delete({
+            where: {
+                id: id
             }
         });
     }
 }
+
 
 const discussionRepository = new DiscussionRepository();
 export default discussionRepository;

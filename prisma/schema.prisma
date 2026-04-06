@@ -11,23 +11,59 @@ datasource db {
 model User {
   id          String       @id @default(uuid()) @db.Uuid
   username    String       @unique
+  fullName    String?      // Ad Soyad alanı eklendi
   email       String       @unique
   password    String
   role        String       @default("user")
   createdAt   DateTime     @default(now()) @map("created_at")
   discussions Discussion[]
+  comments    Comment[]
+  votes       Vote[]
 
   @@map("users")
 }
 
+
 model Discussion {
-  id        String   @id @default(uuid()) @db.Uuid
+  id        String    @id @default(uuid()) @db.Uuid
   title     String
-  content   String   @db.Text
-  authorId  String   @map("author_id") @db.Uuid
-  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  tags      Json     @default("[]")
-  createdAt DateTime @default(now()) @map("created_at")
+  content   String    @db.Text
+  authorId  String    @map("author_id") @db.Uuid
+  author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  tags      Json      @default("[]")
+  createdAt DateTime  @default(now()) @map("created_at")
+  comments  Comment[]
+  votes     Vote[]
 
   @@map("discussions")
 }
+
+model Comment {
+  id           String     @id @default(uuid()) @db.Uuid
+  content      String     @db.Text
+  authorId     String     @map("author_id") @db.Uuid
+  author       User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  discussionId String     @map("discussion_id") @db.Uuid
+  discussion   Discussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+  votes        Vote[]
+
+  @@map("comments")
+}
+
+model Vote {
+  id           String      @id @default(uuid()) @db.Uuid
+  value        Int         // 1 for upvote, -1 for downvote
+  userId       String      @map("user_id") @db.Uuid
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  discussionId String?     @map("discussion_id") @db.Uuid
+  discussion   Discussion? @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+  commentId    String?     @map("comment_id") @db.Uuid
+  comment      Comment?    @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, discussionId])
+  @@unique([userId, commentId])
+  @@map("votes")
+}
+
