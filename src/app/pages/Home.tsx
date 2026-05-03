@@ -1,11 +1,17 @@
 import { useState, useEffect } from "react";
 import { motion } from "motion/react";
-import { Search, Bell, Plus, BookOpen, Tag as TagIcon } from "lucide-react";
+import { Search, Bell, Plus, BookOpen, Tag as TagIcon, TrendingUp, Users, MessageCircle, LogOut } from "lucide-react";
+import { useNavigate } from "react-router";
 import { TopicCard } from "../components/TopicCard";
+import { TopicSkeleton } from "../components/Skeleton";
 import { TagFilter } from "../components/TagFilter";
 import { PromptCard } from "../components/PromptCard";
 import { DevNav } from "../components/DevNav";
 import discussionService from "../../services/discussionService";
+import userService from "../../services/userService";
+import { toast } from "sonner";
+import logo from "../../assets/logo.png";
+import authService from "../../services/authService";
 
 const tags = [
   "Eğitim",
@@ -18,23 +24,75 @@ const tags = [
 
 export default function Home() {
   const [topics, setTopics] = useState<any[]>([]);
+  const [trendingTopics, setTrendingTopics] = useState<any[]>([]);
+  const [suggestedUsers, setSuggestedUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeTab, setActiveTab] = useState<"discover" | "following">("discover");
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    authService.logout();
+    toast.success("Başarıyla çıkış yapıldı");
+    navigate("/");
+  };
 
   useEffect(() => {
-    fetchTopics();
+    fetchSideData();
   }, []);
+
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      fetchTopics();
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery, selectedTags, activeTab]);
+
+  const fetchSideData = async () => {
+    try {
+      const [trendingRes, suggestedRes] = await Promise.all([
+        discussionService.getTrending(),
+        userService.getSuggestedUsers()
+      ]);
+      setTrendingTopics(trendingRes.data || []);
+      setSuggestedUsers(suggestedRes.data || []);
+    } catch (error) {
+      console.error("Yan veriler çekilirken hata:", error);
+    }
+  };
 
   const fetchTopics = async () => {
     try {
       setLoading(true);
-      const data = await discussionService.getAllDiscussions();
-      setTopics(data.data);
+      let data;
+
+      if (activeTab === "following") {
+        data = await discussionService.getFollowingFeed();
+      } else {
+        const tag = selectedTags.length > 0 ? selectedTags[selectedTags.length - 1] : undefined;
+        data = await discussionService.getAllDiscussions({
+          search: searchQuery,
+          tag
+        });
+      }
+
+      setTopics(data.data || []);
     } catch (error) {
       console.error("Tartışmalar çekilirken hata:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleFollow = async (userId: string) => {
+    try {
+      await userService.followUser(userId);
+      toast.success("Takip edildi");
+      fetchSideData(); // Listeyi yenile
+    } catch (error: any) {
+      toast.error(error.message);
     }
   };
 
@@ -73,52 +131,10 @@ export default function Home() {
               href="/home"
               className="flex items-center gap-2 flex-shrink-0 transition-opacity hover:opacity-70"
             >
-              <svg
-                width="24"
-                height="24"
-                viewBox="0 0 40 40"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M20 8L20 32"
-                  stroke="#2C2C28"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-                <path
-                  d="M12 32L28 32"
-                  stroke="#2C2C28"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-                <circle
-                  cx="10"
-                  cy="16"
-                  r="5"
-                  stroke="#6B6B5F"
-                  strokeWidth="1.5"
-                  fill="none"
-                />
-                <circle
-                  cx="30"
-                  cy="16"
-                  r="5"
-                  stroke="#6B6B5F"
-                  strokeWidth="1.5"
-                  fill="none"
-                />
-                <path
-                  d="M10 16L20 12L30 16"
-                  stroke="#2C2C28"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+              <img src={logo} alt="TART Logo" className="w-12 h-12 object-contain" />
               <span
-                className="typewriter"
-                style={{ fontSize: "1.25rem", color: "#2C2C28", fontWeight: 400 }}
+                className="typewriter text-xl font-medium tracking-tight"
+                style={{ color: "#2C2C28" }}
               >
                 TART
               </span>
@@ -200,26 +216,43 @@ export default function Home() {
               </motion.a>
 
               {/* Profile */}
-              <a
-                href="/profile"
-                className="flex items-center gap-2 p-1.5 transition-opacity hover:opacity-70"
-                style={{
-                  border: "1px solid #D4D2C8",
-                  borderRadius: "2px",
-                }}
-              >
-                <div
-                  className="w-8 h-8 flex items-center justify-center typewriter"
-                  style={{
-                    background: "#E8E6E0",
-                    color: "#2C2C28",
-                    fontSize: "0.75rem",
-                    borderRadius: "2px",
-                  }}
-                >
-                  BD
-                </div>
-              </a>
+              {(() => {
+                const user = JSON.parse(localStorage.getItem("user") || "{}");
+                const name = user.fullName || user.username || "Kullanıcı";
+                const initials = name.substring(0, 2).toUpperCase();
+
+                return (
+                  <div className="flex items-center gap-2">
+                    <a
+                      href="/profile"
+                      className="flex items-center gap-2 p-1.5 transition-opacity hover:opacity-70"
+                      style={{
+                        border: "1px solid #D4D2C8",
+                        borderRadius: "2px",
+                      }}
+                    >
+                      <div
+                        className="w-8 h-8 flex items-center justify-center typewriter"
+                        style={{
+                          background: "#E8E6E0",
+                          color: "#2C2C28",
+                          fontSize: "0.75rem",
+                          borderRadius: "2px",
+                        }}
+                      >
+                        {initials}
+                      </div>
+                    </a>
+                    <button
+                      onClick={handleLogout}
+                      className="p-2 transition-all hover:bg-paper border border-[#D4D2C8] rounded-sm group"
+                      title="Çıkış Yap"
+                    >
+                      <LogOut className="w-4 h-4 text-pencil group-hover:text-red-500 transition-colors" />
+                    </button>
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </div>
@@ -230,22 +263,45 @@ export default function Home() {
         <div className="grid lg:grid-cols-[1fr_320px] gap-8">
           {/* Left Column - Topic Feed */}
           <main>
-            {/* Section Header */}
-            <div className="mb-6">
-              <h1
-                className="typewriter mb-2"
+            {/* Haftanın Sorusu / Prompt */}
+            <div className="mb-8">
+              <PromptCard />
+            </div>
+
+            {/* Tabs */}
+            <div className="flex items-center gap-6 mb-8 border-b border-[#D4D2C8]">
+              <button
+                onClick={() => setActiveTab("discover")}
+                className="pb-3 px-1 text-sm typewriter transition-all relative"
                 style={{
-                  fontSize: "1.5rem",
-                  color: "#2C2C28",
-                  fontWeight: 400,
+                  color: activeTab === "discover" ? "#2C2C28" : "#9B9B8F",
+                  fontWeight: activeTab === "discover" ? 500 : 400
                 }}
               >
-                Tartışmalar
-              </h1>
-              <div
-                className="h-px w-24"
-                style={{ background: "#6B6B5F", opacity: 0.3 }}
-              />
+                Keşfet
+                {activeTab === "discover" && (
+                  <motion.div
+                    layoutId="tab-underline"
+                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#2C2C28]"
+                  />
+                )}
+              </button>
+              <button
+                onClick={() => setActiveTab("following")}
+                className="pb-3 px-1 text-sm typewriter transition-all relative"
+                style={{
+                  color: activeTab === "following" ? "#2C2C28" : "#9B9B8F",
+                  fontWeight: activeTab === "following" ? 500 : 400
+                }}
+              >
+                Takip Ettiklerim
+                {activeTab === "following" && (
+                  <motion.div
+                    layoutId="tab-underline"
+                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#2C2C28]"
+                  />
+                )}
+              </button>
             </div>
 
             {/* Topic List */}
@@ -323,11 +379,10 @@ export default function Home() {
 
           {/* Right Column - Sidebar */}
           <aside className="space-y-6">
-            {/* Tag Filters */}
+            {/* Trend Tartışmalar */}
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5 }}
               className="p-5"
               style={{
                 background: "#FFFEF5",
@@ -337,12 +392,93 @@ export default function Home() {
               }}
             >
               <div className="flex items-center gap-2 mb-4">
-                <TagIcon className="w-4 h-4" style={{ color: "#6B6B5F" }} />
+                <TrendingUp className="w-4 h-4" style={{ color: "#4A90E2" }} />
+                <h3 className="typewriter text-sm font-medium" style={{ color: "#4A90E2" }}>Trend Tartışmalar</h3>
+              </div>
+              <div className="space-y-4">
+                {trendingTopics.length > 0 ? (
+                  trendingTopics.map((topic, i) => (
+                    <a key={topic.id} href={`/topic/${topic.id}`} className="block group">
+                      <p className="text-sm typewriter group-hover:underline line-clamp-1 mb-1" style={{ color: "#2C2C28" }}>
+                        {i + 1}. {topic.title}
+                      </p>
+                      <div className="flex items-center gap-2 text-xs handwritten" style={{ color: "#9B9B8F" }}>
+                        <MessageCircle className="w-3 h-3" />
+                        {topic._count.comments} yanıt
+                      </div>
+                    </a>
+                  ))
+                ) : (
+                  <p className="text-[10px] handwritten text-center py-4" style={{ color: "#9B9B8F" }}>
+                    Henüz trend tartışma yok.
+                  </p>
+                )}
+              </div>
+            </motion.div>
+
+            {/* Önerilen Kişiler */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.1 }}
+              className="p-5"
+              style={{
+                background: "#FFFEF5",
+                border: "1px solid #D4D2C8",
+                borderRadius: "2px",
+                boxShadow: "2px 2px 0px rgba(107, 107, 95, 0.15)",
+              }}
+            >
+              <div className="flex items-center gap-2 mb-4">
+                <Users className="w-4 h-4" style={{ color: "#8B9B7A" }} />
+                <h3 className="typewriter text-sm font-medium" style={{ color: "#8B9B7A" }}>Kimi Takip Etmeli?</h3>
+              </div>
+              <div className="space-y-4">
+                {suggestedUsers.length > 0 ? (
+                  suggestedUsers.map((u) => (
+                    <div key={u.id} className="flex items-center justify-between gap-3">
+                      <a href={`/profile/${u.id}`} className="flex items-center gap-2 overflow-hidden hover:opacity-70 transition-opacity">
+                        <div className="w-7 h-7 flex-shrink-0 bg-[#E8E6E0] flex items-center justify-center text-[0.6rem] typewriter border border-[#D4D2C8]">
+                          {u.username.substring(0, 2).toUpperCase()}
+                        </div>
+                        <span className="typewriter text-xs truncate" style={{ color: "#2C2C28" }}>@{u.username}</span>
+                      </a>
+                      <button
+                        onClick={() => handleFollow(u.id)}
+                        className="text-[0.65rem] typewriter px-3 py-1 border border-[#2C2C28] hover:bg-[#2C2C28] hover:text-white transition-colors"
+                      >
+                        Takip Et
+                      </button>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-[10px] handwritten text-center py-4" style={{ color: "#9B9B8F" }}>
+                    Şu an için yeni bir öneri yok.
+                  </p>
+                )}
+              </div>
+            </motion.div>
+
+            {/* Tag Filters */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="p-5"
+              style={{
+                background: "#FFFEF5",
+                border: "1px solid #D4D2C8",
+                borderRadius: "2px",
+                boxShadow: "2px 2px 0px rgba(107, 107, 95, 0.15)",
+              }}
+            >
+              <div className="flex items-center gap-2 mb-4">
+                <TagIcon className="w-4 h-4" style={{ color: "#4A90E2" }} />
                 <h3
                   className="typewriter"
                   style={{
                     fontSize: "0.9rem",
-                    color: "#2C2C28",
+                    color: "#4A90E2",
                     fontWeight: 400,
                   }}
                 >
@@ -361,15 +497,12 @@ export default function Home() {
               </div>
             </motion.div>
 
-            {/* Bugün Düşün Prompt */}
-            <PromptCard />
-
             {/* Manifesto Link */}
             <motion.a
               href="/manifesto"
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
               className="block p-5 transition-all"
               style={{
                 background: "#FFFEF5",
@@ -377,37 +510,9 @@ export default function Home() {
                 borderRadius: "2px",
                 boxShadow: "2px 2px 0px rgba(107, 107, 95, 0.15)",
               }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = "translateY(-2px)";
-                e.currentTarget.style.boxShadow =
-                  "3px 3px 0px rgba(107, 107, 95, 0.25)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow =
-                  "2px 2px 0px rgba(107, 107, 95, 0.15)";
-              }}
             >
-              <h3
-                className="mb-2 typewriter"
-                style={{
-                  fontSize: "0.95rem",
-                  color: "#2C2C28",
-                  fontWeight: 400,
-                }}
-              >
-                Manifestomuz
-              </h3>
-              <p
-                className="text-sm handwritten"
-                style={{ color: "#6B6B5F", lineHeight: 1.6 }}
-              >
-                TART'ın temel ilkelerini oku
-              </p>
-              <div className="mt-3 flex items-center gap-1 text-xs typewriter" style={{ color: "#4A90E2" }}>
-                <span>Oku</span>
-                <span>→</span>
-              </div>
+              <h3 className="mb-1 typewriter text-sm" style={{ color: "#E85D4E" }}>Manifestomuz</h3>
+              <p className="text-xs handwritten" style={{ color: "#6B6B5F" }}>İşleyiş prensiplerimizi oku</p>
             </motion.a>
           </aside>
         </div>
