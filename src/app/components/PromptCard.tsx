@@ -42,7 +42,7 @@ export function PromptCard() {
           className="typewriter"
           style={{
             fontSize: "0.9rem",
-            color: "#2C2C28",
+            color: "#E85D4E",
             fontWeight: 400,
           }}
         >
