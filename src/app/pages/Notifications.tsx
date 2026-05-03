@@ -1,35 +1,41 @@
+import { useState, useEffect } from "react";
 import { motion } from "motion/react";
-import { Bell, MessageSquare, ThumbsUp, UserPlus, ArrowLeft, Clock } from "lucide-react";
+import { MessageSquare, ArrowLeft, Clock } from "lucide-react";
 import { DevNav } from "../components/DevNav";
-
-const mockNotifications = [
-  {
-    id: "1",
-    type: "reply",
-    title: "Yeni yanıt",
-    message: "\"Üniversitelerde not sistemi adil mi?\" tartışmana yeni bir yanıt geldi",
-    time: "5 dakika önce",
-    isRead: false,
-  },
-  {
-    id: "2",
-    type: "mention",
-    title: "Senden bahsedildi",
-    message: "\"Kampüste ifade özgürlüğü\" tartışmasında senden bahsedildi",
-    time: "2 saat önce",
-    isRead: false,
-  },
-  {
-    id: "3",
-    type: "reply",
-    title: "Yeni yanıt",
-    message: "\"Eleştiri kültürü neden önemli?\" tartışmana yeni bir yanıt geldi",
-    time: "1 gün önce",
-    isRead: true,
-  },
-];
+import notificationService from "../../services/notificationService";
+import { formatDistanceToNow } from "date-fns";
+import { tr } from "date-fns/locale";
 
 export default function Notifications() {
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
+
+  const fetchNotifications = async () => {
+    try {
+      const response = await notificationService.getMyNotifications();
+      setNotifications(response.data);
+    } catch (err) {
+      console.error("Bildirimler yüklenemedi:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleMarkAsRead = async (id: string) => {
+    try {
+      await notificationService.markAsRead(id);
+      setNotifications(prev => 
+        prev.map(n => n.id === id ? { ...n, isRead: true } : n)
+      );
+    } catch (err) {
+      console.error("Bildirim işaretlenemedi:", err);
+    }
+  };
+
   return (
     <div
       className="min-h-screen"
@@ -51,8 +57,6 @@ export default function Notifications() {
           animate={{ opacity: 1, x: 0 }}
           className="inline-flex items-center gap-2 mb-8 text-sm handwritten transition-colors"
           style={{ color: "#6B6B5F" }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = "#2C2C28")}
-          onMouseLeave={(e) => (e.currentTarget.style.color = "#6B6B5F")}
         >
           <ArrowLeft className="w-4 h-4" />
           Ana sayfaya dön
@@ -82,10 +86,13 @@ export default function Notifications() {
 
         {/* Notifications List */}
         <div className="space-y-3">
-          {mockNotifications.map((notification, index) => (
+          {loading ? (
+            <p className="handwritten text-center py-12" style={{ color: "#9B9B8F" }}>Yükleniyor...</p>
+          ) : notifications.map((notification, index) => (
             <motion.a
               key={notification.id}
-              href={`/topic/${notification.id}`}
+              href={notification.targetId ? `/topic/${notification.targetId}` : "#"}
+              onClick={() => !notification.isRead && handleMarkAsRead(notification.id)}
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.3, delay: index * 0.05 }}
@@ -131,7 +138,7 @@ export default function Notifications() {
                         fontWeight: 400,
                       }}
                     >
-                      {notification.title}
+                      {notification.type === 'COMMENT' ? 'Yeni Yanıt' : notification.type === 'VOTE' ? 'Beğeni' : 'Sistem Mesajı'}
                     </h3>
                     {!notification.isRead && (
                       <div
@@ -156,7 +163,7 @@ export default function Notifications() {
                       className="text-xs handwritten"
                       style={{ color: "#9B9B8F" }}
                     >
-                      {notification.time}
+                      {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true, locale: tr })}
                     </span>
                   </div>
                 </div>
@@ -166,7 +173,7 @@ export default function Notifications() {
         </div>
 
         {/* Empty state if no notifications */}
-        {mockNotifications.length === 0 && (
+        {!loading && notifications.length === 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

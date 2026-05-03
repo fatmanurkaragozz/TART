@@ -12,7 +12,8 @@ class CommentRepository {
             data: {
                 content: commentData.content,
                 authorId: commentData.authorId,
-                discussionId: commentData.discussionId
+                discussionId: commentData.discussionId,
+                parentId: commentData.parentId || null
             }
         });
     }
@@ -51,6 +52,42 @@ class CommentRepository {
         return await prisma.comment.update({
             where: { id },
             data: { content }
+        });
+    }
+
+    async vote(commentId, userId, value) {
+        // Önce eski oyu kontrol et
+        const existingVote = await prisma.vote.findUnique({
+            where: {
+                userId_commentId: {
+                    userId,
+                    commentId
+                }
+            }
+        });
+
+        if (existingVote) {
+            if (existingVote.value === value) {
+                // Aynı yönde oy verilirse oyu sil (iptal et)
+                return await prisma.vote.delete({
+                    where: { id: existingVote.id }
+                });
+            } else {
+                // Farklı yönde oy verilirse oyu güncelle
+                return await prisma.vote.update({
+                    where: { id: existingVote.id },
+                    data: { value }
+                });
+            }
+        }
+
+        // Yeni oy oluştur
+        return await prisma.vote.create({
+            data: {
+                value,
+                userId,
+                commentId
+            }
         });
     }
 }

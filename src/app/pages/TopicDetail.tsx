@@ -1,5 +1,5 @@
 import { motion } from "motion/react";
-import { ArrowLeft, MessageSquare, ThumbsUp, Flag, Loader2 } from "lucide-react";
+import { ArrowLeft, MessageSquare, Heart, Flag, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router";
 import { DevNav } from "../components/DevNav";
@@ -7,11 +7,14 @@ import discussionService from "../../services/discussionService";
 import commentService from "../../services/commentService";
 import { toast } from "sonner";
 
+import { Skeleton } from "../components/Skeleton";
+
 export default function TopicDetail() {
   const { id } = useParams<{ id: string }>();
   const [topic, setTopic] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [replyText, setReplyText] = useState("");
+  const [replyToId, setReplyToId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -24,7 +27,25 @@ export default function TopicDetail() {
     try {
       setLoading(true);
       const response = await discussionService.getDiscussionById(id!);
-      setTopic(response.data);
+
+      // Yorumları hiyerarşik yapıya dönüştür
+      const flatComments = response.data.comments || [];
+      const commentMap = new Map();
+      const rootComments: any[] = [];
+
+      flatComments.forEach((c: any) => {
+        commentMap.set(c.id, { ...c, replies: [] });
+      });
+
+      flatComments.forEach((c: any) => {
+        if (c.parentId && commentMap.has(c.parentId)) {
+          commentMap.get(c.parentId).replies.push(commentMap.get(c.id));
+        } else if (!c.parentId) {
+          rootComments.push(commentMap.get(c.id));
+        }
+      });
+
+      setTopic({ ...response.data, nestedComments: rootComments });
     } catch (error: any) {
       console.error("Tartışma detayları çekilirken hata:", error);
       toast.error(error.message || "Tartışma yüklenemedi.");
@@ -33,7 +54,7 @@ export default function TopicDetail() {
     }
   };
 
-  const handleSubmitReply = async (e: React.FormEvent) => {
+  const handleSubmitReply = async (e: React.FormEvent, parentId?: string) => {
     e.preventDefault();
     if (!replyText.trim()) return;
 
@@ -42,10 +63,12 @@ export default function TopicDetail() {
       await commentService.addComment({
         content: replyText,
         discussionId: id!,
+        parentId: parentId
       });
-      
-      toast.success("Yanıtınız başarıyla eklendi.");
+
+      toast.success(parentId ? "Yanıtınız başarıyla eklendi." : "Yorumunuz başarıyla eklendi.");
       setReplyText("");
+      setReplyToId(null);
       // Yeniden çekerek listeyi güncelle
       fetchTopicDetails();
     } catch (error: any) {
@@ -56,12 +79,66 @@ export default function TopicDetail() {
     }
   };
 
+  const handleVoteDiscussion = async (value: number) => {
+    // İyimser Güncelleme (Optimistic Update)
+    const originalTopic = { ...topic };
+    const isAdding = value === 1;
+
+    // UI'ı hemen güncelle
+    setTopic((prev: any) => ({
+      ...prev,
+      voteScore: (prev.voteScore || 0) + (isAdding ? 1 : -1)
+    }));
+
+    try {
+      await discussionService.voteDiscussion(id!, value);
+      toast.success(isAdding ? "Tartışmayı beğendiniz." : "Oyunuz geri alındı.");
+      // Arka planda veriyi tazele (gerçek sayıyı teyit et)
+      fetchTopicDetails();
+    } catch (error: any) {
+      // Hata olursa eski haline döndür
+      setTopic(originalTopic);
+      toast.error(error.message || "İşlem başarısız.");
+    }
+  };
+
+  const handleVoteComment = async (commentId: string, value: number) => {
+    try {
+      await commentService.voteComment(commentId, value);
+      fetchTopicDetails();
+    } catch (error: any) {
+      toast.error(error.message || "İşlem başarısız.");
+    }
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    if (!window.confirm("Bu yorumu silmek istediğinize emin misiniz?")) return;
+
+    try {
+      await commentService.deleteComment(commentId);
+      toast.success("Yorum silindi.");
+      fetchTopicDetails();
+    } catch (error: any) {
+      toast.error(error.message || "Yorum silinemedi.");
+    }
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: "#FAFAF5" }}>
-        <div className="text-center">
-          <Loader2 className="w-10 h-10 animate-spin mx-auto mb-4" style={{ color: "#6B6B5F" }} />
-          <p className="handwritten" style={{ color: "#6B6B5F" }}>Yükleniyor...</p>
+      <div className="min-h-screen" style={{ background: "#FAFAF5" }}>
+        <div className="max-w-[900px] mx-auto px-6 py-12">
+          <Skeleton width="150px" height="20px" className="mb-8" />
+          <div className="p-8 mb-8 border-2 border-[#6B6B5F] bg-[#FFFEF5]">
+            <Skeleton width="80%" height="2rem" className="mb-6" />
+            <Skeleton width="100%" height="1rem" className="mb-2" />
+            <Skeleton width="90%" height="1rem" className="mb-8" />
+            <Skeleton width="120px" height="40px" />
+          </div>
+          <div className="space-y-6">
+            <Skeleton width="200px" height="24px" className="mb-4" />
+            <Skeleton width="100%" height="120px" />
+            <Skeleton width="100%" height="120px" />
+          </div>
         </div>
       </div>
     );
@@ -232,6 +309,25 @@ export default function TopicDetail() {
             {topic.content}
           </div>
 
+          {/* Discussion Actions */}
+          <div className="flex items-center gap-4 mb-6">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => handleVoteDiscussion(1)}
+              className="flex items-center gap-2 px-4 py-2 typewriter"
+              style={{
+                background: "rgba(232, 93, 78, 0.05)",
+                border: "1px solid rgba(232, 93, 78, 0.2)",
+                borderRadius: "2px",
+                color: "#E85D4E",
+              }}
+            >
+              <Heart className="w-4 h-4" fill={topic.voteScore > 0 ? "#E85D4E" : "none"} />
+              <span>{topic.voteScore || 0} Beğeni</span>
+            </motion.button>
+          </div>
+
           {/* Color accent underline */}
           <motion.div
             initial={{ scaleX: 0 }}
@@ -269,88 +365,210 @@ export default function TopicDetail() {
           </div>
 
           <div className="space-y-4">
-            {topic.comments && topic.comments.length > 0 ? (
-              topic.comments.map((reply: any, index: number) => (
-                <motion.div
-                  key={reply.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3, delay: 0.3 + index * 0.05 }}
-                  className="p-5"
-                  style={{
-                    background: "#FFFEF5",
-                    border: "1px solid #D4D2C8",
-                    borderLeft: "3px solid #E85D4E",
-                    borderRadius: "2px",
-                    boxShadow: "2px 2px 0px rgba(107, 107, 95, 0.1)",
-                  }}
-                >
-                  {/* Reply Header */}
-                  <div className="flex items-center gap-3 mb-3">
-                    <div
-                      className="w-8 h-8 flex items-center justify-center typewriter"
+            {topic.nestedComments && topic.nestedComments.length > 0 ? (
+              topic.nestedComments.map((reply: any, index: number) => (
+                <div key={reply.id} className="relative mb-6">
+                  {/* Ana Yorum */}
+                  <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.3, delay: 0.3 + index * 0.05 }}
+                    className="p-6 relative z-10"
+                    style={{
+                      background: "#FFFEF5",
+                      border: "1px solid #D4D2C8",
+                      borderLeft: "4px solid #4A90E2", // Ana yorumlar mavi çizgiyle başlar
+                      borderRadius: "2px",
+                      boxShadow: "3px 3px 0px rgba(107, 107, 95, 0.1)",
+                    }}
+                  >
+                    {/* Header */}
+                    <div className="flex items-center justify-between gap-3 mb-4">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="w-9 h-9 flex items-center justify-center typewriter font-bold"
+                          style={{
+                            background: "#E8E6E0",
+                            color: "#2C2C28",
+                            fontSize: "0.8rem",
+                            borderRadius: "2px",
+                            border: "1px solid #D4D2C8"
+                          }}
+                        >
+                          {reply.author?.username?.substring(0, 2).toUpperCase() || "??"}
+                        </div>
+                        <div>
+                          <div
+                            className="typewriter font-medium"
+                            style={{ fontSize: "0.9rem", color: "#2C2C28" }}
+                          >
+                            {reply.author?.username || "Anonim"}
+                          </div>
+                          <div
+                            className="text-xs handwritten"
+                            style={{ color: "#9B9B8F" }}
+                          >
+                            {new Date(reply.createdAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' })}
+                          </div>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => handleDeleteComment(reply.id)}
+                        className="text-xs handwritten hover:text-red-500 transition-colors opacity-60 hover:opacity-100"
+                      >
+                        Sil
+                      </button>
+                    </div>
+
+                    {/* Content */}
+                    <p
+                      className="mb-4 handwritten"
                       style={{
-                        background: "#E8E6E0",
                         color: "#2C2C28",
-                        fontSize: "0.75rem",
-                        borderRadius: "2px",
+                        fontSize: "1.05rem",
+                        lineHeight: 1.7,
+                        letterSpacing: "0.01em"
                       }}
                     >
-                      {reply.author?.username?.substring(0, 2).toUpperCase() || "??"}
-                    </div>
-                    <div>
-                      <div
-                        className="typewriter"
-                        style={{ fontSize: "0.85rem", color: "#2C2C28" }}
-                      >
-                        {reply.author?.username || "Anonim"}
-                      </div>
-                      <div
-                        className="text-xs handwritten"
-                        style={{ color: "#9B9B8F" }}
-                      >
-                        {new Date(reply.createdAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' })}
-                      </div>
-                    </div>
-                  </div>
+                      {reply.content}
+                    </p>
 
-                  {/* Reply Content */}
-                  <p
-                    className="mb-3 handwritten"
-                    style={{
-                      color: "#2C2C28",
-                      fontSize: "0.95rem",
-                      lineHeight: 1.7,
-                    }}
-                  >
-                    {reply.content}
-                  </p>
+                    <div className="flex items-center gap-4">
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => handleVoteComment(reply.id, 1)}
+                        className="flex items-center gap-2 px-3 py-1.5 text-xs typewriter"
+                        style={{
+                          background: "rgba(232, 93, 78, 0.05)",
+                          border: "1px solid rgba(232, 93, 78, 0.2)",
+                          borderRadius: "2px",
+                          color: "#E85D4E",
+                        }}
+                      >
+                        <Heart className="w-3.5 h-3.5" fill={reply.votes?.length > 0 ? "#E85D4E" : "none"} />
+                        {reply.votes?.length || 0}
+                      </motion.button>
 
-                  {/* Like Button */}
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs typewriter"
-                    style={{
-                      background: "transparent",
-                      border: "1px solid #D4D2C8",
-                      borderRadius: "2px",
-                      color: "#6B6B5F",
-                      transition: "all 0.2s ease",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = "#4A90E2";
-                      e.currentTarget.style.color = "#4A90E2";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = "#D4D2C8";
-                      e.currentTarget.style.color = "#6B6B5F";
-                    }}
-                  >
-                    <ThumbsUp className="w-3.5 h-3.5" />
-                    {reply.votes?.length || 0}
-                  </motion.button>
-                </motion.div>
+                      <button
+                        onClick={() => setReplyToId(replyToId === reply.id ? null : reply.id)}
+                        className="text-xs typewriter hover:underline flex items-center gap-1"
+                        style={{ color: "#6B6B5F" }}
+                      >
+                        <MessageSquare className="w-3.5 h-3.5" />
+                        Yanıtla
+                      </button>
+                    </div>
+
+                    {/* Nested Reply Input */}
+                    {replyToId === reply.id && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        className="mt-4 pt-4 border-t border-dashed border-[#D4D2C8]"
+                      >
+                        <textarea
+                          id={`reply-to-${reply.id}`}
+                          name={`reply-to-${reply.id}`}
+                          value={replyText}
+                          onChange={(e) => setReplyText(e.target.value)}
+                          placeholder="Fikrinizi buraya yazın..."
+                          className="w-full p-4 mb-3 handwritten text-sm outline-none border border-[#D4D2C8] bg-[rgba(255,254,245,0.5)] focus:border-[#4A90E2] transition-colors"
+                          rows={4}
+                        />
+                        <div className="flex gap-2 justify-end">
+                          <button
+                            onClick={() => {
+                              setReplyToId(null);
+                              setReplyText("");
+                            }}
+                            className="px-5 py-2 text-xs typewriter border border-[#D4D2C8] rounded-[2px]"
+                          >
+                            Vazgeç
+                          </button>
+                          <button
+                            onClick={(e) => handleSubmitReply(e, reply.id)}
+                            disabled={submitting}
+                            className="px-5 py-2 text-xs typewriter bg-[#2C2C28] text-white rounded-[2px] shadow-md"
+                          >
+                            Yanıtı Gönder
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </motion.div>
+
+                  {/* Yanıtlar Bölümü - Dikey Çizgi ve Girinti ile */}
+                  {reply.replies && reply.replies.length > 0 && (
+                    <div className="mt-2 ml-6 pl-6 relative">
+                      {/* Dikey Bağlantı Çizgisi */}
+                      <div
+                        className="absolute left-0 top-[-20px] bottom-0 w-0.5"
+                        style={{ background: "#D4D2C8", opacity: 0.6 }}
+                      />
+
+                      <div className="space-y-4">
+                        {reply.replies.map((nested: any) => (
+                          <div key={nested.id} className="relative">
+                            {/* Yatay küçük dal çizgisi */}
+                            <div
+                              className="absolute left-[-24px] top-[24px] w-6 h-0.5"
+                              style={{ background: "#D4D2C8", opacity: 0.6 }}
+                            />
+
+                            <motion.div
+                              initial={{ opacity: 0, x: 10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              className="p-5"
+                              style={{
+                                background: "#FAFAF5",
+                                border: "1px solid rgba(212, 210, 200, 0.8)",
+                                borderLeft: "3px solid #E85D4E", // Yanıtlar turuncu çizgiyle ayrılır
+                                borderRadius: "2px",
+                              }}
+                            >
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="typewriter text-[0.75rem] font-bold text-[#2C2C28]">
+                                    {nested.author?.username}
+                                  </span>
+                                  <span className="handwritten text-[0.7rem] text-[#9B9B8F]">
+                                    {new Date(nested.createdAt).toLocaleDateString('tr-TR')}
+                                  </span>
+                                </div>
+                                <button
+                                  onClick={() => handleDeleteComment(nested.id)}
+                                  className="text-[0.65rem] handwritten text-[#9B9B8F] hover:text-red-500"
+                                >
+                                  Sil
+                                </button>
+                              </div>
+                              <p className="handwritten text-[0.95rem] leading-relaxed mb-3" style={{ color: "#444" }}>
+                                {nested.content}
+                              </p>
+
+                              <div className="flex items-center gap-3">
+                                <motion.button
+                                  whileHover={{ scale: 1.1 }}
+                                  whileTap={{ scale: 0.9 }}
+                                  onClick={() => handleVoteComment(nested.id, 1)}
+                                  className="flex items-center gap-1.5 text-[0.7rem] typewriter"
+                                  style={{
+                                    color: nested.votes?.length > 0 ? "#E85D4E" : "#9B9B8F"
+                                  }}
+                                >
+                                  <Heart className="w-3.5 h-3.5" fill={nested.votes?.length > 0 ? "#E85D4E" : "none"} />
+                                  {nested.votes?.length || 0}
+                                </motion.button>
+                              </div>
+                            </motion.div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               ))
             ) : (
               <div className="p-8 text-center handwritten" style={{ color: "#9B9B8F" }}>
@@ -386,6 +604,8 @@ export default function TopicDetail() {
 
           <form onSubmit={handleSubmitReply}>
             <textarea
+              id="main-reply-text"
+              name="main-reply-text"
               value={replyText}
               onChange={(e) => setReplyText(e.target.value)}
               placeholder="Düşüncelerini paylaş..."

@@ -8,7 +8,7 @@ class CommentService {
     /**
      * @desc    Yeni yorum ekle
      */
-    async addComment(commentData: { content: string; discussionId: string }) {
+    async addComment(commentData: { content: string; discussionId: string; parentId?: string }) {
         try {
             const response = await api.post('/comments', commentData);
             return response.data;
@@ -23,6 +23,18 @@ class CommentService {
     async deleteComment(id: string) {
         try {
             const response = await api.delete(`/comments/${id}`);
+            return response.data;
+        } catch (error: any) {
+            this.handleError(error);
+        }
+    }
+
+    /**
+     * @desc    Yorum oyla
+     */
+    async voteComment(id: string, value: number) {
+        try {
+            const response = await api.post(`/comments/${id}/vote`, { value });
             return response.data;
         } catch (error: any) {
             this.handleError(error);

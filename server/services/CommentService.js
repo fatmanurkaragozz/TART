@@ -1,5 +1,7 @@
 import CommentRepository from '../repositories/CommentRepository.js';
 import DiscussionRepository from '../repositories/DiscussionRepository.js';
+import NotificationService from './NotificationService.js';
+import ModerationService from './ModerationService.js';
 import ApiError from '../utils/ApiError.js';
 
 /**
@@ -10,7 +12,7 @@ class CommentService {
      * @desc    Yeni yorum ekle
      */
     async addComment(data) {
-        const { content, authorId, discussionId } = data;
+        const { content, authorId, discussionId, parentId } = data;
 
         // 1. Doğrulamalar
         if (!content || content.trim().length < 2) {
@@ -23,12 +25,34 @@ class CommentService {
             throw new ApiError(404, 'Yorum yapılacak tartışma bulunamadı');
         }
 
-        // 3. Kaydet
-        return await CommentRepository.create({
+        // 3. AI Moderasyon Kontrolü (Hafta 5)
+        const moderation = await ModerationService.analyzeText(content);
+        if (!moderation.isSafe) {
+            throw new ApiError(400, `Yorumunuz topluluk kurallarını ihlal ediyor olabilir (Risk: ${Math.round(moderation.riskScore * 100)}%)`);
+        }
+
+        // 4. Kaydet
+        const comment = await CommentRepository.create({
             content: content.trim(),
             authorId,
-            discussionId
+            discussionId,
+            parentId
         });
+
+        // 4. Bildirim Gönder (Tartışma sahibine)
+        try {
+            await NotificationService.createNotification({
+                userId: discussion.authorId,
+                senderId: authorId,
+                type: 'COMMENT',
+                message: `"${discussion.title}" konulu tartışmanıza yeni bir yorum yapıldı.`,
+                targetId: discussionId
+            });
+        } catch (err) {
+            console.error('Bildirim gönderilemedi:', err.message);
+        }
+
+        return comment;
     }
 
     /**
@@ -47,6 +71,35 @@ class CommentService {
         }
 
         return await CommentRepository.delete(id);
+    }
+
+    /**
+     * @desc    Yorum oyla
+     */
+    async voteComment(commentId, userId, value) {
+        const comment = await CommentRepository.findById(commentId);
+        if (!comment) {
+            throw new ApiError(404, 'Oylanacak yorum bulunamadı');
+        }
+
+        const vote = await CommentRepository.vote(commentId, userId, value);
+
+        // Bildirim Gönder (Yorum sahibine, eğer upvote ise)
+        if (value === 1 && vote.id) { // vote.id varsa yeni oluşturulmuştur veya güncellenmiştir
+            try {
+                await NotificationService.createNotification({
+                    userId: comment.authorId,
+                    senderId: userId,
+                    type: 'VOTE',
+                    message: `Bir yorumunuz beğenildi.`,
+                    targetId: comment.discussionId
+                });
+            } catch (err) {
+                console.error('Bildirim gönderilemedi:', err.message);
+            }
+        }
+
+        return vote;
     }
 }
 

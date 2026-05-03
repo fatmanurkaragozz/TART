@@ -41,7 +41,8 @@ class DiscussionController {
 
     async getDiscussions(req, res, next) {
         try {
-            const discussions = await DiscussionService.getAllDiscussions();
+            const { search, tag, sortBy } = req.query;
+            const discussions = await DiscussionService.getAllDiscussions({ search, tag, sortBy });
             res.json({
                 success: true,
                 count: discussions.length,
@@ -94,6 +95,31 @@ class DiscussionController {
             res.json({
                 success: true,
                 message: 'Oy başarıyla kaydedildi'
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async getTrending(req, res, next) {
+        try {
+            const discussions = await DiscussionService.getTrending();
+            res.json({
+                success: true,
+                data: discussions
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async getFollowingFeed(req, res, next) {
+        try {
+            const userId = req.user.id;
+            const discussions = await DiscussionService.getFollowingFeed(userId);
+            res.json({
+                success: true,
+                data: discussions
             });
         } catch (error) {
             next(error);

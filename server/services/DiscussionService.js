@@ -1,17 +1,27 @@
 import DiscussionRepository from '../repositories/DiscussionRepository.js';
 import VoteRepository from '../repositories/VoteRepository.js';
+import NotificationService from './NotificationService.js';
+import ModerationService from './ModerationService.js';
 
 class DiscussionService {
     async createNewDiscussion(data) {
         if (data.title.length < 5) {
             throw new Error('Başlık en az 5 karakter olmalıdır');
         }
+
+        // AI Moderasyon Kontrolü (Hafta 5)
+        const titleMod = await ModerationService.analyzeText(data.title);
+        const contentMod = await ModerationService.analyzeText(data.content);
+
+        if (!titleMod.isSafe || !contentMod.isSafe) {
+            throw new Error('Tartışma başlığı veya içeriği topluluk kurallarını ihlal ediyor olabilir.');
+        }
         
         return await DiscussionRepository.create(data);
     }
 
-    async getAllDiscussions() {
-        return await DiscussionRepository.findAll();
+    async getAllDiscussions(filters) {
+        return await DiscussionRepository.findAll(filters);
     }
 
     async getDiscussionDetails(id) {
@@ -19,11 +29,6 @@ class DiscussionService {
         if (!discussion) {
             throw new Error('Tartışma bulunamadı');
         }
-
-        // Toplam oy sayısını hesapla
-        const upvotes = discussion.votes.filter(v => v.value === 1).length;
-        const downvotes = discussion.votes.filter(v => v.value === -1).length;
-        discussion.voteScore = upvotes - downvotes;
 
         return discussion;
     }
@@ -56,7 +61,32 @@ class DiscussionService {
         }
 
         // Repository'den oy ver
-        return await VoteRepository.voteDiscussion(id, userId, value);
+        const vote = await VoteRepository.voteDiscussion(id, userId, value);
+
+        // Bildirim Gönder (Tartışma sahibine, eğer upvote ise)
+        if (value === 1 && vote.id) {
+            try {
+                await NotificationService.createNotification({
+                    userId: discussion.authorId,
+                    senderId: userId,
+                    type: 'VOTE',
+                    message: `"${discussion.title}" konulu tartışmanız beğenildi.`,
+                    targetId: id
+                });
+            } catch (err) {
+                console.error('Bildirim gönderilemedi:', err.message);
+            }
+        }
+
+        return vote;
+    }
+
+    async getTrending() {
+        return await DiscussionRepository.findTrending();
+    }
+
+    async getFollowingFeed(userId) {
+        return await DiscussionRepository.findFollowingFeed(userId);
     }
 }
 

@@ -18,4 +18,11 @@ router.post('/', protect, CommentController.addComment);
  */
 router.delete('/:id', protect, CommentController.deleteComment);
 
+/**
+ * @route   POST /api/v1/comments/:id/vote
+ * @desc    Yorum Oyla
+ * @access  Private
+ */
+router.post('/:id/vote', protect, CommentController.voteComment);
+
 export default router;

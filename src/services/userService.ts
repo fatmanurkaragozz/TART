@@ -18,11 +18,59 @@ class UserService {
     }
 
     /**
+     * @desc    ID'ye göre kullanıcı profilini getir
+     */
+    async getUserProfile(id: string) {
+        try {
+            const response = await api.get(`/users/${id}`);
+            return response.data;
+        } catch (error: any) {
+            this.handleError(error);
+        }
+    }
+
+    /**
      * @desc    Kullanıcı profilini güncelle
      */
     async updateProfile(data: { fullName: string }) {
         try {
             const response = await api.patch('/users/me', data);
+            return response.data;
+        } catch (error: any) {
+            this.handleError(error);
+        }
+    }
+
+    /**
+     * @desc    Kullanıcıyı takip et
+     */
+    async followUser(userId: string) {
+        try {
+            const response = await api.post(`/users/${userId}/follow`);
+            return response.data;
+        } catch (error: any) {
+            this.handleError(error);
+        }
+    }
+
+    /**
+     * @desc    Takibi bırak
+     */
+    async unfollowUser(userId: string) {
+        try {
+            const response = await api.delete(`/users/${userId}/follow`);
+            return response.data;
+        } catch (error: any) {
+            this.handleError(error);
+        }
+    }
+
+    /**
+     * @desc    Önerilen kullanıcıları getir
+     */
+    async getSuggestedUsers() {
+        try {
+            const response = await api.get('/users/suggested');
             return response.data;
         } catch (error: any) {
             this.handleError(error);

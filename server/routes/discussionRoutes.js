@@ -8,6 +8,9 @@ router.route('/')
     .get(DiscussionController.getDiscussions)
     .post(protect, DiscussionController.createDiscussion);
 
+router.get('/trending/list', DiscussionController.getTrending);
+router.get('/feed/following', protect, DiscussionController.getFollowingFeed);
+
 router.route('/:id')
     .get(DiscussionController.getDiscussionById)
     .delete(protect, DiscussionController.deleteDiscussion);
