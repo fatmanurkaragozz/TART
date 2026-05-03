@@ -1,4 +1,5 @@
 import { NavLink } from "./NavLink";
+import logo from "../../assets/logo.png";
 
 export function Navbar() {
   return (
@@ -14,13 +15,7 @@ export function Navbar() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <NavLink to="/" className="flex items-center gap-2 transition-opacity hover:opacity-70">
-            <svg width="24" height="24" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M20 8L20 32" stroke="#2C2C28" strokeWidth="2" strokeLinecap="round"/>
-              <path d="M12 32L28 32" stroke="#2C2C28" strokeWidth="2" strokeLinecap="round"/>
-              <circle cx="10" cy="16" r="5" stroke="#6B6B5F" strokeWidth="1.5" fill="none"/>
-              <circle cx="30" cy="16" r="5" stroke="#6B6B5F" strokeWidth="1.5" fill="none"/>
-              <path d="M10 16L20 12L30 16" stroke="#2C2C28" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
+            <img src={logo} alt="TART Logo" className="w-12 h-12 object-contain" />
             <span
               className="typewriter"
               style={{ fontSize: "1.25rem", color: "#2C2C28", fontWeight: 400 }}

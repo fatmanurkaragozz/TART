@@ -22,8 +22,8 @@ export function TagFilter({ tag, isSelected, onClick }: TagFilterProps) {
         ...(isSelected
           ? {}
           : {
-              boxShadow: "none",
-            }),
+            boxShadow: "none",
+          }),
       }}
       onMouseEnter={(e) => {
         if (!isSelected) {

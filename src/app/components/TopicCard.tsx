@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { motion } from "motion/react";
 import { Clock } from "lucide-react";
 
@@ -13,7 +14,7 @@ interface TopicCardProps {
   delay?: number;
 }
 
-export function TopicCard({ topic, delay = 0 }: TopicCardProps) {
+export const TopicCard = memo(({ topic, delay = 0 }: TopicCardProps) => {
   // Color level system: gradually add color as users contribute
   const getColorAccent = (level: number) => {
     if (level === 0) return "#6B6B5F"; // monochrome
@@ -143,4 +144,4 @@ export function TopicCard({ topic, delay = 0 }: TopicCardProps) {
       )}
     </motion.a>
   );
-}
+});
