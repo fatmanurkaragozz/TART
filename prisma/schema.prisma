@@ -14,11 +14,18 @@ model User {
   fullName    String?      // Ad Soyad alanı eklendi
   email       String       @unique
   password    String
-  role        String       @default("user")
-  createdAt   DateTime     @default(now()) @map("created_at")
-  discussions Discussion[]
-  comments    Comment[]
-  votes       Vote[]
+  role                String       @default("user")
+  resetPasswordToken  String?      @map("reset_password_token")
+  resetPasswordExpire DateTime?    @map("reset_password_expire")
+  createdAt           DateTime     @default(now()) @map("created_at")
+  discussions         Discussion[]
+  comments            Comment[]
+  votes               Vote[]
+  notifications       Notification[]
+  
+  // Takip Sistemi (Kendi kendine ilişki)
+  followedBy User[] @relation("UserFollows")
+  following  User[] @relation("UserFollows")
 
   @@map("users")
 }
@@ -36,6 +43,7 @@ model Discussion {
   votes     Vote[]
 
   @@map("discussions")
+  @@index([authorId])
 }
 
 model Comment {
@@ -45,11 +53,17 @@ model Comment {
   author       User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
   discussionId String     @map("discussion_id") @db.Uuid
   discussion   Discussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+  parentId     String?    @map("parent_id") @db.Uuid
+  parent       Comment?   @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies      Comment[]  @relation("CommentReplies")
   createdAt    DateTime   @default(now()) @map("created_at")
   updatedAt    DateTime   @updatedAt @map("updated_at")
   votes        Vote[]
 
   @@map("comments")
+  @@index([discussionId])
+  @@index([parentId])
+  @@index([authorId])
 }
 
 model Vote {
@@ -64,6 +78,22 @@ model Vote {
 
   @@unique([userId, discussionId])
   @@unique([userId, commentId])
+  @@index([discussionId])
+  @@index([commentId])
   @@map("votes")
+}
+
+model Notification {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  senderId  String?  @map("sender_id") @db.Uuid
+  type      String   // COMMENT, VOTE, SYSTEM
+  message   String
+  targetId  String?  @map("target_id") // ID of discussion or comment
+  isRead    Boolean  @default(false) @map("is_read")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("notifications")
 }
 
