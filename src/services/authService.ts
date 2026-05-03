@@ -44,6 +44,30 @@ class AuthService {
     }
 
     /**
+     * @desc    Şifre Sıfırlama İsteği
+     */
+    async forgotPassword(email: string) {
+        try {
+            const response = await api.post('/auth/forgot-password', { email });
+            return response.data;
+        } catch (error: any) {
+            this.handleError(error);
+        }
+    }
+
+    /**
+     * @desc    Yeni Şifre Belirleme
+     */
+    async resetPassword(resetToken: string, data: any) {
+        try {
+            const response = await api.post(`/auth/reset-password/${resetToken}`, data);
+            return response.data;
+        } catch (error: any) {
+            this.handleError(error);
+        }
+    }
+
+    /**
      * @desc    Merkezi Hata Yönetimi
      */
     private handleError(error: any) {

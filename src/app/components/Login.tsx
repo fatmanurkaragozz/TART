@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion } from "motion/react";
 import { Mail, Lock, Eye, EyeOff, ArrowLeft } from "lucide-react";
+import logo from "../../assets/logo.png";
 
 export function Login() {
   const [email, setEmail] = useState("");
@@ -48,13 +49,7 @@ export function Login() {
           </a>
           
           <div className="flex items-center gap-3 mb-8">
-            <svg width="32" height="32" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M20 8L20 32" stroke="#2C2C28" strokeWidth="2" strokeLinecap="round"/>
-              <path d="M12 32L28 32" stroke="#2C2C28" strokeWidth="2" strokeLinecap="round"/>
-              <circle cx="10" cy="16" r="5" stroke="#6B6B5F" strokeWidth="1.5" fill="none"/>
-              <circle cx="30" cy="16" r="5" stroke="#6B6B5F" strokeWidth="1.5" fill="none"/>
-              <path d="M10 16L20 12L30 16" stroke="#2C2C28" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
+            <img src={logo} alt="TART Logo" className="w-12 h-12 object-contain" />
             <span className="typewriter" style={{ color: "#2C2C28", fontSize: "1.5rem", fontWeight: 400 }}>TART</span>
           </div>
 
@@ -91,13 +86,7 @@ export function Login() {
           {/* Mobile Logo */}
           <div className="lg:hidden mb-8">
             <a href="/" className="flex items-center gap-3 mb-6">
-              <svg width="28" height="28" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M20 8L20 32" stroke="#2C2C28" strokeWidth="2" strokeLinecap="round"/>
-                <path d="M12 32L28 32" stroke="#2C2C28" strokeWidth="2" strokeLinecap="round"/>
-                <circle cx="10" cy="16" r="5" stroke="#6B6B5F" strokeWidth="1.5" fill="none"/>
-                <circle cx="30" cy="16" r="5" stroke="#6B6B5F" strokeWidth="1.5" fill="none"/>
-                <path d="M10 16L20 12L30 16" stroke="#2C2C28" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
+              <img src={logo} alt="TART Logo" className="w-10 h-10 object-contain" />
               <span className="typewriter" style={{ color: "#2C2C28", fontSize: "1.2rem", fontWeight: 400 }}>TART</span>
             </a>
           </div>

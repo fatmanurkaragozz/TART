@@ -20,6 +20,7 @@ import { StatChip } from "./components/StatChip";
 import { StepCard } from "./components/StepCard";
 import { Footer } from "./components/Footer";
 import { DevNav } from "./components/DevNav";
+import acilisGorseli from "../assets/acilisGorseli.jpeg";
 import { useRef } from "react";
 
 export default function App() {
@@ -36,7 +37,7 @@ export default function App() {
       <DevNav />
 
       {/* Hero Section - Layered Notebook/Paper Composition */}
-      <section 
+      <section
         ref={heroRef}
         className="relative pt-32 pb-20 lg:pt-40 lg:pb-32 overflow-hidden"
         style={{
@@ -45,7 +46,7 @@ export default function App() {
         }}
       >
         {/* Paper Texture Overlay */}
-        <div 
+        <div
           className="absolute inset-0 opacity-[0.08]"
           style={{
             backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='2.5' numOctaves='3' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' /%3E%3C/svg%3E")`,
@@ -57,7 +58,7 @@ export default function App() {
           style={{ y: y1 }}
           className="absolute inset-0 opacity-20"
         >
-          <div 
+          <div
             className="w-full h-full"
             style={{
               backgroundImage: `url("https://images.unsplash.com/photo-1723220217596-45d4b51e2804?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxoYW5kd3JpdHRlbiUyMG5vdGVzJTIwcGFwZXJ8ZW58MXx8fHwxNzY3NzE5OTMyfDA&ixlib=rb-4.1.0&q=80&w=1080")`,
@@ -113,7 +114,7 @@ export default function App() {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.5, delay: 0.3 }}
                 className="inline-flex items-center gap-2 px-4 py-2 mb-6"
-                style={{ 
+                style={{
                   background: "transparent",
                   border: "1px solid #6B6B5F",
                   borderRadius: "2px",
@@ -126,9 +127,9 @@ export default function App() {
               </motion.div>
 
               {/* Main Headline - Typewriter style */}
-              <h1 
+              <h1
                 className="mb-8 leading-tight typewriter"
-                style={{ 
+                style={{
                   fontSize: "clamp(2.25rem, 5vw, 3.25rem)",
                   fontWeight: 400,
                   color: "#2C2C28",
@@ -138,21 +139,21 @@ export default function App() {
               >
                 Eleştirmeyi öğrenmeden gelişemeyiz.
               </h1>
-              
+
               {/* Underline accent - hand-drawn style */}
-              <motion.div 
+              <motion.div
                 initial={{ scaleX: 0 }}
                 animate={{ scaleX: 1 }}
                 transition={{ duration: 1, delay: 0.5 }}
                 className="h-0.5 w-48 mb-6"
-                style={{ 
+                style={{
                   background: "#6B6B5F",
                   transformOrigin: "left",
                   opacity: 0.4
                 }}
               />
-              
-              <p 
+
+              <p
                 className="text-lg mb-8 max-w-xl handwritten"
                 style={{ color: "#6B6B5F", lineHeight: 1.8 }}
               >
@@ -179,7 +180,7 @@ export default function App() {
                     <ChevronRight className="w-5 h-5" />
                   </motion.div>
                 </NavLink>
-                
+
                 <motion.a
                   href="#nasil-calisir"
                   whileHover={{ scale: 1.02, y: -2 }}
@@ -206,12 +207,12 @@ export default function App() {
                   "Açık fikirli topluluk",
                   "Eleştiri kültürü"
                 ].map((label, index) => (
-                  <motion.div 
+                  <motion.div
                     key={index}
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.6 + index * 0.1 }}
-                    className="flex items-center gap-2 text-sm handwritten" 
+                    className="flex items-center gap-2 text-sm handwritten"
                     style={{ color: "#6B6B5F" }}
                   >
                     <span style={{ color: "#8B9B7A" }}>✓</span>
@@ -258,7 +259,7 @@ export default function App() {
                 }}
               >
                 <img
-                  src="https://images.unsplash.com/photo-1579389082289-3d6922d506c4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx1bml2ZXJzaXR5JTIwZGVzayUyMG5vdGVib29rfGVufDF8fHx8MTc2NzcxOTkyOXww&ixlib=rb-4.1.0&q=80&w=1080"
+                  src={acilisGorseli}
                   alt="University desk"
                   className="w-4/5 h-auto"
                   style={{
@@ -266,9 +267,9 @@ export default function App() {
                     border: "2px solid #6B6B5F",
                   }}
                 />
-                
+
                 {/* Handwritten note overlay */}
-                <div 
+                <div
                   className="absolute -bottom-3 -right-3 px-4 py-2 handwritten"
                   style={{
                     background: "#FFFEF5",
@@ -279,7 +280,7 @@ export default function App() {
                     boxShadow: "2px 2px 4px rgba(0,0,0,0.1)",
                   }}
                 >
-                  düşünmek, yazmak, eletirmek
+                  düşünmek, yazmak, eleştirmek
                 </div>
               </motion.div>
 
@@ -295,7 +296,7 @@ export default function App() {
                 }}
               >
                 <div className="text-sm handwritten" style={{ color: "#6B6B5F" }}>
-                  5K+ öğrenci
+                  gençler için
                 </div>
               </motion.div>
             </motion.div>
@@ -305,8 +306,8 @@ export default function App() {
         {/* Paper tear transition */}
         <div className="absolute bottom-0 left-0 right-0 h-16">
           <svg viewBox="0 0 1440 60" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-            <path 
-              d="M0,30 L20,28 L40,32 L60,27 L80,33 L100,29 L120,31 L140,28 L160,34 L180,30 L200,29 L220,32 L240,28 L260,31 L280,33 L300,29 L320,30 L340,32 L360,28 L380,31 L400,29 L420,33 L440,30 L460,28 L480,32 L500,29 L520,31 L540,33 L560,28 L580,30 L600,32 L620,29 L640,31 L660,28 L680,33 L700,30 L720,29 L740,32 L760,28 L780,31 L800,33 L820,29 L840,30 L860,32 L880,28 L900,31 L920,29 L940,33 L960,30 L980,28 L1000,32 L1020,29 L1040,31 L1060,33 L1080,28 L1100,30 L1120,32 L1140,29 L1160,31 L1180,28 L1200,33 L1220,30 L1240,29 L1260,32 L1280,28 L1300,31 L1320,33 L1340,29 L1360,30 L1380,32 L1400,28 L1420,31 L1440,30 L1440,60 L0,60 Z" 
+            <path
+              d="M0,30 L20,28 L40,32 L60,27 L80,33 L100,29 L120,31 L140,28 L160,34 L180,30 L200,29 L220,32 L240,28 L260,31 L280,33 L300,29 L320,30 L340,32 L360,28 L380,31 L400,29 L420,33 L440,30 L460,28 L480,32 L500,29 L520,31 L540,33 L560,28 L580,30 L600,32 L620,29 L640,31 L660,28 L680,33 L700,30 L720,29 L740,32 L760,28 L780,31 L800,33 L820,29 L840,30 L860,32 L880,28 L900,31 L920,29 L940,33 L960,30 L980,28 L1000,32 L1020,29 L1040,31 L1060,33 L1080,28 L1100,30 L1120,32 L1140,29 L1160,31 L1180,28 L1200,33 L1220,30 L1240,29 L1260,32 L1280,28 L1300,31 L1320,33 L1340,29 L1360,30 L1380,32 L1400,28 L1420,31 L1440,30 L1440,60 L0,60 Z"
               fill="#FAFAF5"
             />
           </svg>
@@ -317,16 +318,16 @@ export default function App() {
       <section className="py-16" style={{ background: "#FAFAF5" }}>
         <div className="max-w-[1200px] mx-auto px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            <StatChip value="5K+" label="Aktif Kullanıcı" delay={0} />
-            <StatChip value="200+" label="Günlük Tartışma" delay={0.1} />
-            <StatChip value="50+" label="Farklı Konu" delay={0.2} />
-            <StatChip value="95%" label="Memnuniyet" delay={0.3} />
+            <StatChip value="Özgür" label="Tartışma" delay={0} />
+            <StatChip value="Yapıcı" label="Eleştiri" delay={0.1} />
+            <StatChip value="Güvenli" label="Alan" delay={0.2} />
+            <StatChip value="Ortak" label="Gelişim" delay={0.3} />
           </div>
         </div>
       </section>
 
       {/* Why TART Section - Chalkboard texture */}
-      <section 
+      <section
         id="neden-tart"
         className="py-20 lg:py-32 relative"
         style={{
@@ -334,7 +335,7 @@ export default function App() {
         }}
       >
         {/* Chalk dust texture */}
-        <div 
+        <div
           className="absolute inset-0 opacity-[0.15]"
           style={{
             backgroundImage: `url("https://images.unsplash.com/photo-1564144006388-615f4f4abb6e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxvbGQlMjBjaGFsa2JvYXJkJTIwY2xhc3Nyb29tfGVufDF8fHx8MTc2NzcxOTkzMnww&ixlib=rb-4.1.0&q=80&w=1080")`,
@@ -351,10 +352,10 @@ export default function App() {
             transition={{ duration: 0.6 }}
             className="mb-16"
           >
-            <h2 
+            <h2
               id="nedir"
               className="mb-4 typewriter text-center"
-              style={{ 
+              style={{
                 fontSize: "clamp(2rem, 4vw, 2.5rem)",
                 fontWeight: 400,
                 color: "#2C2C28",
@@ -399,8 +400,8 @@ export default function App() {
         {/* Page turn transition */}
         <div className="absolute bottom-0 left-0 right-0 h-20">
           <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-            <path 
-              d="M0,0 C240,60 480,20 720,40 C960,60 1200,20 1440,40 L1440,80 L0,80 Z" 
+            <path
+              d="M0,0 C240,60 480,20 720,40 C960,60 1200,20 1440,40 L1440,80 L0,80 Z"
               fill="#F0EDE5"
             />
           </svg>
@@ -408,7 +409,7 @@ export default function App() {
       </section>
 
       {/* How It Works Section - Lined paper */}
-      <section 
+      <section
         id="nasil-calisir"
         className="py-20 lg:py-32 relative"
         style={{
@@ -440,9 +441,9 @@ export default function App() {
             transition={{ duration: 0.6 }}
             className="mb-16"
           >
-            <h2 
+            <h2
               className="mb-4 typewriter text-center"
-              style={{ 
+              style={{
                 fontSize: "clamp(2rem, 4vw, 2.5rem)",
                 fontWeight: 400,
                 color: "#2C2C28",
@@ -484,8 +485,8 @@ export default function App() {
         {/* Organic wave transition */}
         <div className="absolute bottom-0 left-0 right-0 h-20">
           <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-            <path 
-              d="M0,40 Q360,10 720,40 T1440,40 L1440,80 L0,80 Z" 
+            <path
+              d="M0,40 Q360,10 720,40 T1440,40 L1440,80 L0,80 Z"
               fill="#D4D2C8"
             />
           </svg>
@@ -493,15 +494,15 @@ export default function App() {
       </section>
 
       {/* Manifesto Section - Old paper */}
-      <section 
+      <section
         id="manifesto"
         className="py-20 lg:py-32 relative overflow-hidden"
-        style={{ 
+        style={{
           background: "#D4D2C8",
         }}
       >
         {/* Aged paper texture */}
-        <div 
+        <div
           className="absolute inset-0 opacity-20"
           style={{
             backgroundImage: `url("https://images.unsplash.com/photo-1723220217596-45d4b51e2804?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxoYW5kd3JpdHRlbiUyMG5vdGVzJTIwcGFwZXJ8ZW58MXx8fHwxNzY3NzE5OTMyfDA&ixlib=rb-4.1.0&q=80&w=1080")`,
@@ -509,7 +510,7 @@ export default function App() {
             filter: "sepia(20%)",
           }}
         />
-        
+
         <div className="max-w-[1200px] mx-auto px-6 lg:px-8 relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -519,9 +520,9 @@ export default function App() {
             className="text-center mb-12"
           >
             <div className="inline-block mb-4">
-              <div 
+              <div
                 className="px-4 py-1 handwritten"
-                style={{ 
+                style={{
                   background: "transparent",
                   border: "1px dashed #6B6B5F",
                   color: "#6B6B5F",
@@ -531,9 +532,9 @@ export default function App() {
                 Manifestomuz
               </div>
             </div>
-            <h2 
+            <h2
               className="mb-6 typewriter"
-              style={{ 
+              style={{
                 fontSize: "clamp(2rem, 4vw, 2.5rem)",
                 fontWeight: 400,
                 color: "#2C2C28",
@@ -569,16 +570,16 @@ export default function App() {
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: item.delay }}
                 className="text-center p-8"
-                style={{ 
+                style={{
                   background: "#FFFEF5",
                   border: "2px solid #6B6B5F",
                   borderRadius: "2px",
                   boxShadow: "4px 4px 0px rgba(107, 107, 95, 0.2)",
                 }}
               >
-                <h3 
+                <h3
                   className="mb-4 typewriter"
-                  style={{ 
+                  style={{
                     fontSize: "1.35rem",
                     fontWeight: 400,
                     color: "#2C2C28",
@@ -598,8 +599,8 @@ export default function App() {
         {/* Paper edge transition */}
         <div className="absolute bottom-0 left-0 right-0 h-16">
           <svg viewBox="0 0 1440 60" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-            <path 
-              d="M0,30 L15,28 L30,32 L45,27 L60,33 L75,29 L90,31 L105,28 L120,34 L135,30 L150,29 L165,32 L180,28 L195,31 L210,33 L225,29 L240,30 L255,32 L270,28 L285,31 L300,29 L315,33 L330,30 L345,28 L360,32 L375,29 L390,31 L405,33 L420,28 L435,30 L450,32 L465,29 L480,31 L495,28 L510,33 L525,30 L540,29 L555,32 L570,28 L585,31 L600,33 L615,29 L630,30 L645,32 L660,28 L675,31 L690,29 L705,33 L720,30 L735,28 L750,32 L765,29 L780,31 L795,33 L810,28 L825,30 L840,32 L855,29 L870,31 L885,28 L900,33 L915,30 L930,29 L945,32 L960,28 L975,31 L990,33 L1005,29 L1020,30 L1035,32 L1050,28 L1065,31 L1080,29 L1095,33 L1110,30 L1125,28 L1140,32 L1155,29 L1170,31 L1185,33 L1200,28 L1215,30 L1230,32 L1245,29 L1260,31 L1275,28 L1290,33 L1305,30 L1320,29 L1335,32 L1350,28 L1365,31 L1380,33 L1395,29 L1410,30 L1425,32 L1440,30 L1440,60 L0,60 Z" 
+            <path
+              d="M0,30 L15,28 L30,32 L45,27 L60,33 L75,29 L90,31 L105,28 L120,34 L135,30 L150,29 L165,32 L180,28 L195,31 L210,33 L225,29 L240,30 L255,32 L270,28 L285,31 L300,29 L315,33 L330,30 L345,28 L360,32 L375,29 L390,31 L405,33 L420,28 L435,30 L450,32 L465,29 L480,31 L495,28 L510,33 L525,30 L540,29 L555,32 L570,28 L585,31 L600,33 L615,29 L630,30 L645,32 L660,28 L675,31 L690,29 L705,33 L720,30 L735,28 L750,32 L765,29 L780,31 L795,33 L810,28 L825,30 L840,32 L855,29 L870,31 L885,28 L900,33 L915,30 L930,29 L945,32 L960,28 L975,31 L990,33 L1005,29 L1020,30 L1035,32 L1050,28 L1065,31 L1080,29 L1095,33 L1110,30 L1125,28 L1140,32 L1155,29 L1170,31 L1185,33 L1200,28 L1215,30 L1230,32 L1245,29 L1260,31 L1275,28 L1290,33 L1305,30 L1320,29 L1335,32 L1350,28 L1365,31 L1380,33 L1395,29 L1410,30 L1425,32 L1440,30 L1440,60 L0,60 Z"
               fill="#FAFAF5"
             />
           </svg>
@@ -616,9 +617,9 @@ export default function App() {
             transition={{ duration: 0.6 }}
             className="text-center max-w-2xl mx-auto"
           >
-            <h2 
+            <h2
               className="mb-6 typewriter"
-              style={{ 
+              style={{
                 fontSize: "clamp(2rem, 4vw, 2.5rem)",
                 fontWeight: 400,
                 color: "#2C2C28",
@@ -627,14 +628,14 @@ export default function App() {
             >
               Sessiz kalma. Tartış.
             </h2>
-            
-            <motion.div 
+
+            <motion.div
               initial={{ scaleX: 0 }}
               whileInView={{ scaleX: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8 }}
               className="h-0.5 w-64 mx-auto mb-8"
-              style={{ 
+              style={{
                 background: "#6B6B5F",
                 transformOrigin: "center",
                 opacity: 0.4
@@ -643,7 +644,7 @@ export default function App() {
 
             <p className="text-lg mb-10 handwritten" style={{ color: "#6B6B5F", lineHeight: 1.8 }}>
               TART topluluğuna katıl, düşüncelerini özgürce ifade et ve eleştirel düşünme kültürüne katkıda bulun.\n            </p>
-            
+
             <NavLink to="/register">
               <motion.div
                 whileHover={{ scale: 1.03, y: -3 }}
@@ -663,7 +664,7 @@ export default function App() {
                 <ChevronRight className="w-5 h-5" />
               </motion.div>
             </NavLink>
-            
+
             <p className="text-sm mt-6 handwritten" style={{ color: "#6B6B5F" }}>
               E-posta ile hızlı kayıt • Ücretsiz ve açık erişim
             </p>
