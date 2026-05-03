@@ -6,6 +6,7 @@ import { NavLink } from "../components/NavLink";
 import { DevNav } from "../components/DevNav";
 import authService from "../../services/authService";
 import { toast } from "sonner";
+import logo from "../../assets/logo.png";
 
 export default function Login() {
   const [formData, setFormData] = useState({
@@ -121,13 +122,7 @@ export default function Login() {
           {/* Logo */}
           <NavLink to="/" className="flex justify-center mb-8">
             <div className="flex items-center gap-3">
-              <svg width="32" height="32" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M20 8L20 32" stroke="#2C2C28" strokeWidth="2" strokeLinecap="round"/>
-                <path d="M12 32L28 32" stroke="#2C2C28" strokeWidth="2" strokeLinecap="round"/>
-                <circle cx="10" cy="16" r="5" stroke="#6B6B5F" strokeWidth="1.5" fill="none"/>
-                <circle cx="30" cy="16" r="5" stroke="#6B6B5F" strokeWidth="1.5" fill="none"/>
-                <path d="M10 16L20 12L30 16" stroke="#2C2C28" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
+              <img src={logo} alt="TART Logo" className="w-12 h-12 object-contain" />
               <span 
                 className="typewriter"
                 style={{ 
@@ -250,6 +245,15 @@ export default function Login() {
                   {errors.password}
                 </p>
               )}
+              <div className="flex justify-end mt-2">
+                <NavLink 
+                  to="/forgot-password"
+                  className="text-xs handwritten hover:underline"
+                  style={{ color: "#6B6B5F" }}
+                >
+                  Şifremi Unuttum
+                </NavLink>
+              </div>
             </div>
 
             {/* Submit Button */}
