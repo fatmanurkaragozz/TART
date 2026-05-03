@@ -6,6 +6,7 @@ import discussionRoutes from './routes/discussionRoutes.js';
 import commentRoutes from './routes/commentRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import userRoutes from './routes/userRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
 import errorHandler from './middleware/errorHandler.js';
 import ApiError from './utils/ApiError.js';
 
@@ -29,11 +30,14 @@ app.use(cors({
 // 4. JSON Body Parser
 app.use(express.json({ limit: '10kb' })); 
 
+app.get('/', (req, res) => res.send('API is running...'));
+
 // 5. Rotalar
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/discussions', discussionRoutes);
 app.use('/api/v1/comments', commentRoutes);
 app.use('/api/v1/users', userRoutes);
+app.use('/api/v1/notifications', notificationRoutes);
 
 
 // 6. 404

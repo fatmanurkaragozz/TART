@@ -1,27 +1,67 @@
 import { useState, useEffect } from "react";
 import { motion } from "motion/react";
-import { ArrowLeft, Edit2, MessageSquare, Clock } from "lucide-react";
+import { ArrowLeft, Edit2, MessageSquare, Clock, UserPlus, UserMinus } from "lucide-react";
 import { DevNav } from "../components/DevNav";
 import userService from "../../services/userService";
+import { useParams } from "react-router";
+import { toast } from "sonner";
 
 export default function Profile() {
+  const { id } = useParams();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({ fullName: "" });
+  const [isSaving, setIsSaving] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
+
+  const isOwnProfile = !id || id === JSON.parse(localStorage.getItem("user") || "{}").id;
 
   useEffect(() => {
     fetchProfile();
-  }, []);
+  }, [id]);
 
   const fetchProfile = async () => {
     try {
       setLoading(true);
-      const response = await userService.getMyProfile();
+      const response = id ? await userService.getUserProfile(id) : await userService.getMyProfile();
       setProfile(response.data);
+      setFormData({ fullName: response.data.fullName || "" });
     } catch (err: any) {
       setError(err.message || "Profil bilgileri yüklenemedi");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleFollowAction = async () => {
+    if (!profile) return;
+    try {
+      if (isFollowing) {
+        await userService.unfollowUser(profile.id);
+        toast.success("Takip bırakıldı");
+      } else {
+        await userService.followUser(profile.id);
+        toast.success("Takip edildi");
+      }
+      setIsFollowing(!isFollowing);
+      fetchProfile(); // Sayaçları yenile
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+  };
+
+  const handleUpdateProfile = async () => {
+    try {
+      setIsSaving(true);
+      await userService.updateProfile(formData);
+      await fetchProfile();
+      setIsEditing(false);
+    } catch (err: any) {
+      alert(err.message || "Profil güncellenemedi");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -118,22 +158,37 @@ export default function Profile() {
 
                 {/* Info */}
                 <div className="flex-1">
-                  <h1
-                    className="mb-2 typewriter"
-                    style={{
-                      fontSize: "1.75rem",
-                      color: "#2C2C28",
-                      fontWeight: 400,
-                    }}
-                  >
-                    {profile?.fullName || profile?.username}
-                  </h1>
-                  <p
-                    className="mb-4 handwritten"
-                    style={{ color: "#6B6B5F", fontSize: "0.95rem" }}
-                  >
-                    {profile?.username} · Tartışmalarım ve katkılarım
-                  </p>
+                  {isEditing ? (
+                    <div className="mb-4">
+                      <label className="block text-xs typewriter mb-1" style={{ color: "#6B6B5F" }}>İsim Soyisim</label>
+                      <input
+                        type="text"
+                        value={formData.fullName}
+                        onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                        className="w-full p-2 typewriter border-b-2 border-[#D4D2C8] focus:border-[#2C2C28] outline-none bg-transparent"
+                        placeholder="İsim Soyisim"
+                      />
+                    </div>
+                  ) : (
+                    <>
+                      <h1
+                        className="mb-2 typewriter"
+                        style={{
+                          fontSize: "1.75rem",
+                          color: "#2C2C28",
+                          fontWeight: 400,
+                        }}
+                      >
+                        {profile?.fullName || profile?.username}
+                      </h1>
+                      <p
+                        className="mb-4 handwritten"
+                        style={{ color: "#6B6B5F", fontSize: "0.95rem" }}
+                      >
+                        {profile?.username} · Tartışmalarım ve katkılarım
+                      </p>
+                    </>
+                  )}
 
                   {/* Stats */}
                   <div className="flex gap-6 mb-4">
@@ -164,33 +219,112 @@ export default function Profile() {
                           fontWeight: 400,
                         }}
                       >
-                        {profile?._count?.comments || 0}
+                        {profile?._count?.followedBy || 0}
                       </div>
                       <div
                         className="text-xs handwritten"
                         style={{ color: "#6B6B5F" }}
                       >
-                        Yanıt
+                        Takipçi
+                      </div>
+                    </div>
+                    <div>
+                      <div
+                        className="typewriter"
+                        style={{
+                          fontSize: "1.5rem",
+                          color: "#8B9B7A",
+                          fontWeight: 400,
+                        }}
+                      >
+                        {profile?._count?.following || 0}
+                      </div>
+                      <div
+                        className="text-xs handwritten"
+                        style={{ color: "#6B6B5F" }}
+                      >
+                        Takip
                       </div>
                     </div>
                   </div>
 
-                  {/* Edit Button */}
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="flex items-center gap-2 px-4 py-2 typewriter"
-                    style={{
-                      background: "transparent",
-                      border: "1px solid #6B6B5F",
-                      borderRadius: "2px",
-                      color: "#6B6B5F",
-                      fontSize: "0.85rem",
-                    }}
-                  >
-                    <Edit2 className="w-3.5 h-3.5" />
-                    Profili Düzenle
-                  </motion.button>
+                  {/* Edit/Follow Buttons */}
+                  <div className="flex gap-2">
+                    {isOwnProfile ? (
+                      isEditing ? (
+                        <>
+                          <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={handleUpdateProfile}
+                            disabled={isSaving}
+                            className="px-4 py-2 typewriter"
+                            style={{
+                              background: "#2C2C28",
+                              border: "1px solid #2C2C28",
+                              borderRadius: "2px",
+                              color: "#F5F5F0",
+                              fontSize: "0.85rem",
+                            }}
+                          >
+                            {isSaving ? "Kaydediliyor..." : "Kaydet"}
+                          </motion.button>
+                          <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => {
+                              setIsEditing(false);
+                              setFormData({ fullName: profile?.fullName || "" });
+                            }}
+                            className="px-4 py-2 typewriter"
+                            style={{
+                              background: "transparent",
+                              border: "1px solid #D4D2C8",
+                              borderRadius: "2px",
+                              color: "#6B6B5F",
+                              fontSize: "0.85rem",
+                            }}
+                          >
+                            İptal
+                          </motion.button>
+                        </>
+                      ) : (
+                        <motion.button
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => setIsEditing(true)}
+                          className="flex items-center gap-2 px-4 py-2 typewriter"
+                          style={{
+                            background: "transparent",
+                            border: "1px solid #6B6B5F",
+                            borderRadius: "2px",
+                            color: "#6B6B5F",
+                            fontSize: "0.85rem",
+                          }}
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                          Profili Düzenle
+                        </motion.button>
+                      )
+                    ) : (
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={handleFollowAction}
+                        className="flex items-center gap-2 px-6 py-2 typewriter"
+                        style={{
+                          background: isFollowing ? "transparent" : "#2C2C28",
+                          border: "1px solid #2C2C28",
+                          borderRadius: "2px",
+                          color: isFollowing ? "#2C2C28" : "#F5F5F0",
+                          fontSize: "0.85rem",
+                        }}
+                      >
+                        {isFollowing ? <UserMinus className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
+                        {isFollowing ? "Takibi Bırak" : "Takip Et"}
+                      </motion.button>
+                    )}
+                  </div>
                 </div>
               </div>
 

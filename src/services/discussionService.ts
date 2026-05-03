@@ -6,11 +6,11 @@ import api from '../lib/axios';
  */
 class DiscussionService {
     /**
-     * @desc    Tüm tartışmaları getir
+     * @desc    Tüm tartışmaları getir (Arama ve filtreleme ile)
      */
-    async getAllDiscussions() {
+    async getAllDiscussions(filters?: { search?: string; tag?: string }) {
         try {
-            const response = await api.get('/discussions');
+            const response = await api.get('/discussions', { params: filters });
             return response.data;
         } catch (error: any) {
             this.handleError(error);
@@ -59,6 +59,30 @@ class DiscussionService {
     async voteDiscussion(id: string, value: number) {
         try {
             const response = await api.post(`/discussions/${id}/vote`, { value });
+            return response.data;
+        } catch (error: any) {
+            this.handleError(error);
+        }
+    }
+
+    /**
+     * @desc    Trend tartışmaları getir
+     */
+    async getTrending() {
+        try {
+            const response = await api.get('/discussions/trending/list');
+            return response.data;
+        } catch (error: any) {
+            this.handleError(error);
+        }
+    }
+
+    /**
+     * @desc    Takip edilen kişilerin akışını getir
+     */
+    async getFollowingFeed() {
+        try {
+            const response = await api.get('/discussions/feed/following');
             return response.data;
         } catch (error: any) {
             this.handleError(error);

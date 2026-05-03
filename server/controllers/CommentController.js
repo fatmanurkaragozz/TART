@@ -9,10 +9,10 @@ class CommentController {
      */
     async addComment(req, res, next) {
         try {
-            const { content, discussionId } = req.body;
+            const { content, discussionId, parentId } = req.body;
             const authorId = req.user.id;
 
-            const comment = await CommentService.addComment({ content, authorId, discussionId });
+            const comment = await CommentService.addComment({ content, authorId, discussionId, parentId });
 
             res.status(201).json({
                 success: true,
@@ -38,6 +38,26 @@ class CommentController {
             res.status(200).json({
                 success: true,
                 message: 'Yorum başarıyla silindi'
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * @desc    Yorum Oyla
+     */
+    async voteComment(req, res, next) {
+        try {
+            const { id } = req.params;
+            const { value } = req.body; // 1 veya -1
+            const userId = req.user.id;
+
+            await CommentService.voteComment(id, userId, value);
+
+            res.status(200).json({
+                success: true,
+                message: 'Oy başarıyla kaydedildi'
             });
         } catch (error) {
             next(error);

@@ -11,13 +11,18 @@ import TopicDetail from "./app/pages/TopicDetail";
 import Notifications from "./app/pages/Notifications";
 import Profile from "./app/pages/Profile";
 import Manifesto from "./app/pages/Manifesto";
+import ForgotPassword from "./app/pages/ForgotPassword";
+import ResetPassword from "./app/pages/ResetPassword";
 import "./styles/theme.css";
 import "./styles/fonts.css";
 import "./styles/index.css";
 
+import { ErrorBoundary } from "./app/components/ErrorBoundary";
+
 const router = createBrowserRouter([
   {
     Component: Layout,
+    errorElement: <ErrorBoundary />,
     children: [
       {
         index: true,
@@ -30,6 +35,14 @@ const router = createBrowserRouter([
       {
         path: "register",
         Component: Register,
+      },
+      {
+        path: "forgot-password",
+        Component: ForgotPassword,
+      },
+      {
+        path: "reset-password/:token",
+        Component: ResetPassword,
       },
       {
         path: "home",
@@ -49,6 +62,10 @@ const router = createBrowserRouter([
       },
       {
         path: "profile",
+        Component: Profile,
+      },
+      {
+        path: "profile/:id",
         Component: Profile,
       },
       {

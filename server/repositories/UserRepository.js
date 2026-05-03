@@ -72,7 +72,9 @@ class UserRepository {
                 _count: {
                     select: {
                         discussions: true,
-                        comments: true
+                        comments: true,
+                        followedBy: true,
+                        following: true
                     }
                 },
                 discussions: {
@@ -89,6 +91,21 @@ class UserRepository {
         });
     }
     /**
+     * @desc    Reset token'ına göre kullanıcı bul
+     * @param   {string} resetPasswordToken
+     */
+    async findByResetToken(resetPasswordToken) {
+        return await prisma.user.findFirst({
+            where: {
+                resetPasswordToken,
+                resetPasswordExpire: {
+                    gt: new Date()
+                }
+            }
+        });
+    }
+
+    /**
      * @desc    Kullanıcı bilgilerini güncelle
      * @param   {string} id
      * @param   {object} data
@@ -103,6 +120,56 @@ class UserRepository {
                 fullName: true,
                 email: true,
                 role: true
+            }
+        });
+    }
+
+    /**
+     * @desc    Kullanıcıyı takip et
+     */
+    async followUser(followerId, followingId) {
+        return await prisma.user.update({
+            where: { id: followerId },
+            data: {
+                following: {
+                    connect: { id: followingId }
+                }
+            }
+        });
+    }
+
+    /**
+     * @desc    Takibi bırak
+     */
+    async unfollowUser(followerId, followingId) {
+        return await prisma.user.update({
+            where: { id: followerId },
+            data: {
+                following: {
+                    disconnect: { id: followingId }
+                }
+            }
+        });
+    }
+
+    /**
+     * @desc    Önerilen kullanıcıları getir (En çok takipçisi olanlar)
+     */
+    async findSuggestedUsers(excludeUserId) {
+        return await prisma.user.findMany({
+            take: 5,
+            where: {
+                id: { not: excludeUserId }
+            },
+            select: {
+                id: true,
+                username: true,
+                _count: {
+                    select: { followedBy: true }
+                }
+            },
+            orderBy: {
+                followedBy: { _count: 'desc' }
             }
         });
     }

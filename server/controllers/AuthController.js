@@ -56,6 +56,58 @@ class AuthController {
             next(err);
         }
     }
+
+    /**
+     * @route   POST /api/v1/auth/forgot-password
+     * @desc    Şifre Sıfırlama İsteği
+     */
+    async forgotPassword(req, res, next) {
+        try {
+            console.log('Forgot password request received:', req.body);
+            const { email } = req.body;
+
+            if (!email) {
+                return next(new ApiError(400, 'E-posta adresi gereklidir'));
+            }
+
+            await AuthService.forgotPassword(email);
+
+            res.status(200).json({
+                success: true,
+                message: 'Şifre sıfırlama bağlantısı e-posta adresinize gönderildi'
+            });
+        } catch (err) {
+            next(err);
+        }
+    }
+
+    /**
+     * @route   POST /api/v1/auth/reset-password/:resetToken
+     * @desc    Yeni Şifre Belirleme
+     */
+    async resetPassword(req, res, next) {
+        try {
+            const { password } = req.body;
+            const { resetToken } = req.params;
+
+            if (!password) {
+                return next(new ApiError(400, 'Yeni şifre gereklidir'));
+            }
+
+            const { user, token } = await AuthService.resetPassword(resetToken, password);
+
+            res.status(200).json({
+                success: true,
+                message: 'Şifreniz başarıyla güncellendi',
+                data: {
+                    user,
+                    token
+                }
+            });
+        } catch (err) {
+            next(err);
+        }
+    }
 }
 
 const authController = new AuthController();
