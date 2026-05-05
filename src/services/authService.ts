@@ -4,6 +4,7 @@ import api from '../lib/axios';
  * Kimlik Doğrulama Servisi
  * Kayıt, giriş ve çıkış işlemlerinin frontend tarafındaki mantığını yönetir.
  */
+
 class AuthService {
     /**
      * @desc    Kullanıcı Kaydı
