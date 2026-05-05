@@ -56,8 +56,8 @@ export default function Home() {
         discussionService.getTrending(),
         userService.getSuggestedUsers()
       ]);
-      setTrendingTopics(trendingRes.data || []);
-      setSuggestedUsers(suggestedRes.data || []);
+      setTrendingTopics(trendingRes?.data || []);
+      setSuggestedUsers(suggestedRes?.data || []);
     } catch (error) {
       console.error("Yan veriler çekilirken hata:", error);
     }
@@ -78,7 +78,7 @@ export default function Home() {
         });
       }
 
-      setTopics(data.data || []);
+      setTopics(data?.data || []);
     } catch (error) {
       console.error("Tartışmalar çekilirken hata:", error);
     } finally {
@@ -311,7 +311,7 @@ export default function Home() {
               </div>
             ) : topics.length > 0 ? (
               <div className="space-y-4">
-                {topics.map((topic: any, index: number) => (
+                {topics?.map((topic: any, index: number) => (
                   <TopicCard key={topic.id} topic={{
                     ...topic,
                     preview: topic.content.substring(0, 150) + "...",
@@ -396,8 +396,8 @@ export default function Home() {
                 <h3 className="typewriter text-sm font-medium" style={{ color: "#4A90E2" }}>Trend Tartışmalar</h3>
               </div>
               <div className="space-y-4">
-                {trendingTopics.length > 0 ? (
-                  trendingTopics.map((topic, i) => (
+                {trendingTopics?.length > 0 ? (
+                  trendingTopics?.map((topic, i) => (
                     <a key={topic.id} href={`/topic/${topic.id}`} className="block group">
                       <p className="text-sm typewriter group-hover:underline line-clamp-1 mb-1" style={{ color: "#2C2C28" }}>
                         {i + 1}. {topic.title}
@@ -434,8 +434,8 @@ export default function Home() {
                 <h3 className="typewriter text-sm font-medium" style={{ color: "#8B9B7A" }}>Kimi Takip Etmeli?</h3>
               </div>
               <div className="space-y-4">
-                {suggestedUsers.length > 0 ? (
-                  suggestedUsers.map((u) => (
+                {suggestedUsers?.length > 0 ? (
+                  suggestedUsers?.map((u) => (
                     <div key={u.id} className="flex items-center justify-between gap-3">
                       <a href={`/profile/${u.id}`} className="flex items-center gap-2 overflow-hidden hover:opacity-70 transition-opacity">
                         <div className="w-7 h-7 flex-shrink-0 bg-[#E8E6E0] flex items-center justify-center text-[0.6rem] typewriter border border-[#D4D2C8]">

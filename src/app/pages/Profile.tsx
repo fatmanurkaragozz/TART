@@ -380,7 +380,7 @@ export default function Profile() {
 
               <div className="space-y-3">
                 {profile?.discussions?.length > 0 ? (
-                  profile.discussions.map((topic: any, index: number) => (
+                  profile?.discussions?.map((topic: any, index: number) => (
                     <motion.a
                       key={topic.id}
                       href={`/topic/${topic.id}`}
