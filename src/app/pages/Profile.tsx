@@ -15,6 +15,7 @@ export default function Profile() {
   const [formData, setFormData] = useState({ fullName: "" });
   const [isSaving, setIsSaving] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
+  const [showFollowModal, setShowFollowModal] = useState<"followers" | "following" | null>(null);
 
   const isOwnProfile = !id || id === JSON.parse(localStorage.getItem("user") || "{}").id;
 
@@ -28,6 +29,15 @@ export default function Profile() {
       const response = id ? await userService.getUserProfile(id) : await userService.getMyProfile();
       setProfile(response.data);
       setFormData({ fullName: response.data.fullName || "" });
+      
+      // Check if current user is following this profile
+      if (id) {
+        const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+        if (currentUser.id) {
+          const isFoll = response.data.followedBy?.some((f: any) => f.id === currentUser.id);
+          setIsFollowing(!!isFoll);
+        }
+      }
     } catch (err: any) {
       setError(err.message || "Profil bilgileri yüklenemedi");
     } finally {
@@ -210,7 +220,10 @@ export default function Profile() {
                         Tartışma
                       </div>
                     </div>
-                    <div>
+                    <div
+                      className="cursor-pointer hover:opacity-70 transition-opacity"
+                      onClick={() => setShowFollowModal("followers")}
+                    >
                       <div
                         className="typewriter"
                         style={{
@@ -228,7 +241,10 @@ export default function Profile() {
                         Takipçi
                       </div>
                     </div>
-                    <div>
+                    <div
+                      className="cursor-pointer hover:opacity-70 transition-opacity"
+                      onClick={() => setShowFollowModal("following")}
+                    >
                       <div
                         className="typewriter"
                         style={{
@@ -421,6 +437,54 @@ export default function Profile() {
                 )}
               </div>
             </motion.div>
+
+            {/* Follow Modal */}
+            {showFollowModal && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm" onClick={() => setShowFollowModal(null)}>
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="w-full max-w-sm p-6"
+                  style={{
+                    background: "#FFFEF5",
+                    border: "2px solid #2C2C28",
+                    borderRadius: "2px",
+                    boxShadow: "8px 8px 0px rgba(44, 44, 40, 0.2)",
+                    maxHeight: "80vh",
+                    overflowY: "auto"
+                  }}
+                >
+                  <h3 className="text-xl mb-4 typewriter" style={{ color: "#2C2C28" }}>
+                    {showFollowModal === "followers" ? "Takipçiler" : "Takip Edilenler"}
+                  </h3>
+                  
+                  <div className="space-y-4">
+                    {(showFollowModal === "followers" ? profile?.followedBy : profile?.following)?.map((u: any) => (
+                      <a key={u.id} href={`/profile/${u.id}`} className="flex items-center gap-3 p-2 hover:bg-[#F5F5F0] transition-colors rounded-sm border border-transparent hover:border-[#D4D2C8]">
+                        <div className="w-10 h-10 flex-shrink-0 bg-[#E8E6E0] flex items-center justify-center text-sm typewriter border border-[#D4D2C8]">
+                          {(u.fullName || u.username || "??").substring(0, 2).toUpperCase()}
+                        </div>
+                        <div>
+                          <div className="typewriter text-sm" style={{ color: "#2C2C28" }}>{u.fullName || u.username}</div>
+                          <div className="handwritten text-xs" style={{ color: "#6B6B5F" }}>@{u.username}</div>
+                        </div>
+                      </a>
+                    ))}
+                    {!(showFollowModal === "followers" ? profile?.followedBy : profile?.following)?.length && (
+                      <p className="text-center text-sm handwritten text-[#6B6B5F] py-4">Kimse bulunamadı.</p>
+                    )}
+                  </div>
+                  
+                  <button
+                    onClick={() => setShowFollowModal(null)}
+                    className="mt-6 w-full py-2 text-sm typewriter border border-[#2C2C28] hover:bg-[#2C2C28] hover:text-white transition-colors"
+                  >
+                    Kapat
+                  </button>
+                </motion.div>
+              </div>
+            )}
           </>
         )}
       </div>

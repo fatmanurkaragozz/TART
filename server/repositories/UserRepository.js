@@ -77,6 +77,12 @@ class UserRepository {
                         following: true
                     }
                 },
+                followedBy: {
+                    select: { id: true, username: true, fullName: true }
+                },
+                following: {
+                    select: { id: true, username: true, fullName: true }
+                },
                 discussions: {
                     orderBy: {
                         createdAt: 'desc'
@@ -159,7 +165,12 @@ class UserRepository {
         return await prisma.user.findMany({
             take: 5,
             where: {
-                id: { not: excludeUserId }
+                id: { not: excludeUserId },
+                ...(excludeUserId ? {
+                    followedBy: {
+                        none: { id: excludeUserId }
+                    }
+                } : {})
             },
             select: {
                 id: true,

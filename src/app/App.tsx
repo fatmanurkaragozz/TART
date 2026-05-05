@@ -253,7 +253,7 @@ export default function App() {
                 initial={{ opacity: 0, rotate: 1, y: 20 }}
                 animate={{ opacity: 1, rotate: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 0.6 }}
-                className="relative -mt-32 ml-12"
+                className="relative lg:-mt-32 lg:ml-12 mt-4 ml-4"
                 style={{
                   boxShadow: "6px 6px 0px rgba(107, 107, 95, 0.3)",
                 }}
