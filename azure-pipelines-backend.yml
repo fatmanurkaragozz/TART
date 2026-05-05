@@ -10,8 +10,8 @@ trigger:
       - package-lock.json
 
 variables:
-  azureSubscription: 'YOUR_BACKEND_SERVICE_CONNECTION'
-  webAppName: 'YOUR_BACKEND_WEB_APP_NAME'
+  azureSubscription: 'tart-azure-conn'
+  webAppName: 'tart-api'
 
 pool:
   vmImage: 'ubuntu-latest'
