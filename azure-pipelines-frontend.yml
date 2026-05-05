@@ -1,0 +1,59 @@
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - src/*
+      - public/*
+      - index.html
+      - vite.config.ts
+      - package.json
+      - package-lock.json
+
+variables:
+  azureSubscription: 'YOUR_FRONTEND_SERVICE_CONNECTION'
+  webAppName: 'YOUR_FRONTEND_WEB_APP_NAME'
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+- task: NodeTool@0
+  inputs:
+    versionSpec: '22.x'
+  displayName: 'Install Node.js'
+
+- script: |
+    npm install
+    npm run build
+  displayName: 'Install dependencies & Build Frontend'
+  env:
+    # Bu degiskenin Azure DevOps Pipeline Variables kismindan tanimlanmasi gerekir
+    VITE_API_BASE_URL: $(VITE_API_BASE_URL)
+
+- script: |
+    mkdir -p $(Build.ArtifactStagingDirectory)/frontend
+    cp -r dist $(Build.ArtifactStagingDirectory)/frontend/
+    
+    # Sadece frontend'in calismasi icin gerekli olan mini package.json dosyasi
+    echo '{"name":"tart-frontend","scripts":{"start":"npx serve -s dist -l 8080"},"dependencies":{"serve":"^14.0.0"}}' > $(Build.ArtifactStagingDirectory)/frontend/package.json
+  displayName: 'Prepare Frontend Artifact Payload'
+
+- task: ArchiveFiles@2
+  displayName: 'Archive Frontend'
+  inputs:
+    rootFolderOrFile: '$(Build.ArtifactStagingDirectory)/frontend'
+    includeRootFolder: false
+    archiveType: zip
+    archiveFile: $(Build.ArtifactStagingDirectory)/frontend.zip
+    replaceExistingArchive: true
+
+- task: AzureWebApp@1
+  displayName: 'Deploy Frontend to Azure Web App'
+  inputs:
+    azureSubscription: $(azureSubscription)
+    appType: webAppLinux
+    appName: $(webAppName)
+    package: $(Build.ArtifactStagingDirectory)/frontend.zip
+    startUpCommand: 'npm start'
