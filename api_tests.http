@@ -1,0 +1,67 @@
+### TART API Test Dosyası
+# Bu dosyayı kullanmak için VS Code'da "REST Client" eklentisini kurun.
+
+@baseUrl = http://localhost:5000/api/v1
+@email = fk6895164@gmail.com
+@password = 123456
+
+### 1. Kayıt Ol (Opsiyonel - Eğer kullanıcı yoksa)
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+    "username": "Test Kullanıcı",
+    "email": "{{email}}",
+    "password": "{{password}}"
+}
+
+### 2. Giriş Yap (Token Al)
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "{{email}}",
+    "password": "{{password}}"
+}
+
+### Token Değişkeni
+@token = {{login.response.body.data.token}}
+
+### 3. Tüm Tartışmaları Getir (Herkese Açık)
+GET {{baseUrl}}/discussions
+
+### 4. Yeni Tartışma Oluştur (Giriş Gerektirir)
+# @name createDiscussion
+POST {{baseUrl}}/discussions
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "title": "API üzerinden test tartışması",
+    "content": "Bu tartışma REST Client kullanılarak oluşturulmuştur. SOLID prensipleri uygulanmıştır.",
+    "tags": ["Teknoloji", "Test"]
+}
+
+### 5. Tartışma Detayını Getir (Yorumlarla Birlikte)
+@discussionId = {{createDiscussion.response.body.data.id}}
+GET {{baseUrl}}/discussions/{{discussionId}}
+
+### 6. Tartışmaya Yorum Yap (Giriş Gerektirir)
+POST {{baseUrl}}/comments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "discussionId": "{{discussionId}}",
+    "content": "Harika bir test yorumu!"
+}
+
+### 7. Tartışmaya Oy Ver
+POST {{baseUrl}}/discussions/{{discussionId}}/vote
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "value": 1
+}

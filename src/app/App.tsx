@@ -161,11 +161,11 @@ export default function App() {
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 mb-8">
-                <NavLink to="/register">
+                <NavLink to="/register" className="w-full sm:w-auto">
                   <motion.div
                     whileHover={{ scale: 1.02, y: -2 }}
                     whileTap={{ scale: 0.98, y: 0 }}
-                    className="px-8 py-4 flex items-center justify-center gap-2 shadow-sm typewriter"
+                    className="w-full px-8 py-4 flex items-center justify-center gap-2 shadow-sm typewriter"
                     style={{
                       background: "#2C2C28",
                       color: "#F5F5F0",
@@ -185,7 +185,7 @@ export default function App() {
                   href="#nasil-calisir"
                   whileHover={{ scale: 1.02, y: -2 }}
                   whileTap={{ scale: 0.98, y: 0 }}
-                  className="px-8 py-4 typewriter"
+                  className="w-full sm:w-auto px-8 py-4 flex items-center justify-center typewriter"
                   style={{
                     background: "transparent",
                     color: "#2C2C28",
