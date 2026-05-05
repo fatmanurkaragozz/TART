@@ -1,0 +1,45 @@
+name: Deploy Frontend to Azure Web App
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/**'
+      - 'public/**'
+      - 'index.html'
+      - 'vite.config.ts'
+      - 'package.json'
+      - 'package-lock.json'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+
+      - name: Install dependencies and build
+        env:
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
+        run: |
+          npm install
+          npm run build
+
+      - name: Prepare Deployment Payload
+        run: |
+          mkdir -p deployment_payload
+          cp -r dist deployment_payload/
+          echo '{"name":"tart-frontend","scripts":{"start":"npx serve -s dist -l 8080"},"dependencies":{"serve":"^14.0.0"}}' > deployment_payload/package.json
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: 'tart'
+          publish-profile: ${{ secrets.AZURE_FRONTEND_PUBLISH_PROFILE }}
+          package: deployment_payload
