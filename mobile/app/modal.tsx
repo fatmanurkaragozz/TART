@@ -4,6 +4,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowLeft, Flag, MessageSquare, ThumbsUp } from 'lucide-react-native';
 import discussionService from '../src/services/discussionService';
 import commentService from '../src/services/commentService';
+import userService from '../src/services/userService';
+import { ThumbsUp as ThumbsUpFilled } from 'lucide-react-native';
 
 export default function TopicDetailScreen() {
   const { id } = useLocalSearchParams();
@@ -30,6 +32,34 @@ export default function TopicDetailScreen() {
       Alert.alert("Hata", "Tartışma yüklenemedi.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleVoteTopic = async (value: number) => {
+    try {
+      await discussionService.voteDiscussion(id as string, value);
+      fetchTopicDetails();
+    } catch (error: any) {
+      Alert.alert("Hata", "Oylama işlemi başarısız.");
+    }
+  };
+
+  const handleVoteComment = async (commentId: string, value: number) => {
+    try {
+      await commentService.voteComment(commentId, value);
+      fetchTopicDetails();
+    } catch (error: any) {
+      Alert.alert("Hata", "Oylama işlemi başarısız.");
+    }
+  };
+
+  const handleFollowAuthor = async () => {
+    if (!topic.authorId) return;
+    try {
+      await userService.followUser(topic.authorId);
+      Alert.alert("Başarılı", "Yazar takip edildi.");
+    } catch (error: any) {
+      Alert.alert("Hata", error.message);
     }
   };
 
@@ -108,9 +138,17 @@ export default function TopicDetailScreen() {
                 </Text>
               </View>
             </View>
-            <TouchableOpacity className="p-2 border border-border rounded-sm">
-              <Flag size={14} color="#9B9B8F" />
-            </TouchableOpacity>
+            <View className="flex-row items-center gap-2">
+              <TouchableOpacity 
+                onPress={handleFollowAuthor}
+                className="px-3 py-1.5 border border-charcoal rounded-sm"
+              >
+                <Text className="text-charcoal text-xs font-bold" style={{ fontFamily: "Courier" }}>Takip Et</Text>
+              </TouchableOpacity>
+              <TouchableOpacity className="p-2 border border-border rounded-sm">
+                <Flag size={14} color="#9B9B8F" />
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* Title */}
@@ -129,6 +167,26 @@ export default function TopicDetailScreen() {
           <Text className="text-charcoal text-base mb-6" style={{ fontFamily: "System", lineHeight: 24 }}>
             {topic.content}
           </Text>
+
+          {/* Interaction Row */}
+          <View className="flex-row items-center gap-4 py-4 border-y border-dashed border-border mb-6">
+            <TouchableOpacity 
+              onPress={() => handleVoteTopic(1)}
+              className="flex-row items-center gap-2 px-4 py-2 bg-paper border border-pencil rounded-sm"
+            >
+              <ThumbsUp size={16} color="#8B9B7A" />
+              <Text className="text-charcoal font-bold" style={{ fontFamily: "Courier" }}>
+                {topic.votes?.length || 0}
+              </Text>
+            </TouchableOpacity>
+            
+            <View className="flex-row items-center gap-2">
+              <MessageSquare size={16} color="#6B6B5F" />
+              <Text className="text-pencil text-sm" style={{ fontFamily: "System" }}>
+                {topic.comments?.length || 0} yanıt
+              </Text>
+            </View>
+          </View>
 
           {/* Color accent underline */}
           <View className="h-0.5 bg-pencil w-1/3 opacity-30" />
@@ -169,7 +227,10 @@ export default function TopicDetailScreen() {
                     {reply.content}
                   </Text>
 
-                  <TouchableOpacity className="flex-row items-center self-start px-3 py-1.5 border border-border rounded-sm">
+                  <TouchableOpacity 
+                    onPress={() => handleVoteComment(reply.id, 1)}
+                    className="flex-row items-center self-start px-3 py-1.5 border border-border rounded-sm"
+                  >
                     <ThumbsUp size={12} color="#6B6B5F" />
                     <Text className="text-pencil text-xs ml-1" style={{ fontFamily: "Courier" }}>
                       {reply.votes?.length || 0}

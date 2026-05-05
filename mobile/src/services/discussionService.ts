@@ -46,6 +46,15 @@ class DiscussionService {
         }
     }
 
+    async getTrending() {
+        try {
+            const response = await apiClient.get('/discussions/trending/list');
+            return response.data;
+        } catch (error: any) {
+            this.handleError(error);
+        }
+    }
+
     private handleError(error: any) {
         const message = error.response?.data?.message || 'Bir hata oluştu';
         throw new Error(message);

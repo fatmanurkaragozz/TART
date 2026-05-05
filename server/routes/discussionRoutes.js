@@ -4,19 +4,18 @@ import { protect } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-router.route('/')
-    .get(DiscussionController.getDiscussions)
-    .post(protect, DiscussionController.createDiscussion);
-
+// 1. Statik/Spesifik Rotalar (Parametreli rotalardan önce gelmeli)
 router.get('/trending/list', DiscussionController.getTrending);
 router.get('/feed/following', protect, DiscussionController.getFollowingFeed);
 
-router.route('/:id')
-    .get(DiscussionController.getDiscussionById)
-    .delete(protect, DiscussionController.deleteDiscussion);
+// 2. Kök Rota
+router.get('/', DiscussionController.getDiscussions);
+router.post('/', protect, DiscussionController.createDiscussion);
 
-router.route('/:id/vote')
-    .post(protect, DiscussionController.voteDiscussion);
+// 3. Parametreli Rotalar
+router.get('/:id', DiscussionController.getDiscussionById);
+router.delete('/:id', protect, DiscussionController.deleteDiscussion);
+router.post('/:id/vote', protect, DiscussionController.voteDiscussion);
 
 export default router;
 

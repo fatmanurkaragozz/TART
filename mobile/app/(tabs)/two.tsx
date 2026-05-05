@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Alert, TextInput } from 'react-native';
 import { User, Edit2, MessageSquare, Clock, LogOut } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import userService from '../../src/services/userService';
@@ -8,6 +8,9 @@ import authService from '../../src/services/authService';
 export default function ProfileScreen() {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [fullName, setFullName] = useState("");
+  const [saving, setSaving] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -19,10 +22,25 @@ export default function ProfileScreen() {
       setLoading(true);
       const response = await userService.getMyProfile();
       setProfile(response.data);
+      setFullName(response.data.fullName || "");
     } catch (err: any) {
       Alert.alert("Hata", err.message || "Profil bilgileri yüklenemedi");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleUpdateProfile = async () => {
+    try {
+      setSaving(true);
+      await userService.updateProfile({ fullName });
+      await fetchProfile();
+      setIsEditing(false);
+      Alert.alert("Başarılı", "Profil güncellendi.");
+    } catch (err: any) {
+      Alert.alert("Hata", err.message || "Profil güncellenemedi");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -51,31 +69,71 @@ export default function ProfileScreen() {
           </View>
           
           <View className="flex-1 justify-center">
-            <Text className="text-charcoal text-2xl mb-1" style={{ fontFamily: "Courier" }}>
-              {profile?.fullName || profile?.username || "Misafir"}
-            </Text>
-            <Text className="text-pencil text-sm mb-3" style={{ fontFamily: "System" }}>
-              @{profile?.username || "guest"} · Tartışmalarım
-            </Text>
+            {isEditing ? (
+              <View className="mb-4">
+                <TextInput
+                  value={fullName}
+                  onChangeText={setFullName}
+                  placeholder="İsim Soyisim"
+                  className="p-2 border-b border-pencil text-charcoal"
+                  style={{ fontFamily: "System" }}
+                />
+                <View className="flex-row gap-2 mt-3">
+                  <TouchableOpacity 
+                    onPress={handleUpdateProfile}
+                    disabled={saving}
+                    className="bg-charcoal px-4 py-2 rounded-sm"
+                  >
+                    <Text className="text-paper text-xs" style={{ fontFamily: "Courier" }}>
+                      {saving ? "..." : "Kaydet"}
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    onPress={() => setIsEditing(false)}
+                    className="border border-border px-4 py-2 rounded-sm"
+                  >
+                    <Text className="text-pencil text-xs" style={{ fontFamily: "Courier" }}>İptal</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ) : (
+              <>
+                <Text className="text-charcoal text-2xl mb-1" style={{ fontFamily: "Courier" }}>
+                  {profile?.fullName || profile?.username || "Misafir"}
+                </Text>
+                <Text className="text-pencil text-sm mb-3" style={{ fontFamily: "System" }}>
+                  @{profile?.username || "guest"} · Tartışmalarım
+                </Text>
 
-            <TouchableOpacity 
-              className="self-start flex-row items-center border border-pencil px-3 py-1.5 rounded-sm"
-            >
-              <Edit2 size={14} color="#6B6B5F" />
-              <Text className="text-pencil text-xs ml-2" style={{ fontFamily: "Courier" }}>Profili Düzenle</Text>
-            </TouchableOpacity>
+                <TouchableOpacity 
+                  onPress={() => setIsEditing(true)}
+                  className="self-start flex-row items-center border border-pencil px-3 py-1.5 rounded-sm"
+                >
+                  <Edit2 size={14} color="#6B6B5F" />
+                  <Text className="text-pencil text-xs ml-2" style={{ fontFamily: "Courier" }}>Profili Düzenle</Text>
+                </TouchableOpacity>
+              </>
+            )}
           </View>
         </View>
 
         {/* Stats */}
-        <View className="flex-row mb-6">
-          <View className="mr-8">
-            <Text className="text-charcoal text-3xl" style={{ fontFamily: "Courier" }}>{profile?._count?.discussions || 0}</Text>
-            <Text className="text-pencil text-xs" style={{ fontFamily: "System" }}>Tartışma</Text>
+        <View className="flex-row justify-between mb-6">
+          <View className="items-center">
+            <Text className="text-charcoal text-2xl" style={{ fontFamily: "Courier" }}>{profile?._count?.discussions || 0}</Text>
+            <Text className="text-pencil text-[10px] uppercase" style={{ fontFamily: "System" }}>Tartışma</Text>
           </View>
-          <View>
-            <Text className="text-blue-500 text-3xl" style={{ fontFamily: "Courier", color: "#4A90E2" }}>{profile?._count?.comments || 0}</Text>
-            <Text className="text-pencil text-xs" style={{ fontFamily: "System" }}>Yanıt</Text>
+          <View className="items-center">
+            <Text className="text-3xl" style={{ fontFamily: "Courier", color: "#4A90E2" }}>{profile?._count?.followedBy || 0}</Text>
+            <Text className="text-pencil text-[10px] uppercase" style={{ fontFamily: "System" }}>Takipçi</Text>
+          </View>
+          <View className="items-center">
+            <Text className="text-3xl" style={{ fontFamily: "Courier", color: "#8B9B7A" }}>{profile?._count?.following || 0}</Text>
+            <Text className="text-pencil text-[10px] uppercase" style={{ fontFamily: "System" }}>Takip</Text>
+          </View>
+          <View className="items-center">
+            <Text className="text-charcoal text-2xl" style={{ fontFamily: "Courier" }}>{profile?._count?.comments || 0}</Text>
+            <Text className="text-pencil text-[10px] uppercase" style={{ fontFamily: "System" }}>Yanıt</Text>
           </View>
         </View>
 

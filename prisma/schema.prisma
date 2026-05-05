@@ -39,6 +39,7 @@ model Discussion {
   author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
   tags      Json      @default("[]")
   createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at")
   comments  Comment[]
   votes     Vote[]
 

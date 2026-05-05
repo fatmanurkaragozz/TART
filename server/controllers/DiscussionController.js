@@ -56,6 +56,13 @@ class DiscussionController {
     async getDiscussionById(req, res, next) {
         try {
             const { id } = req.params;
+            
+            // UUID format kontrolü (Prisma çökmesini önlemek için)
+            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+            if (!uuidRegex.test(id)) {
+                return next(new ApiError(400, 'Geçersiz tartışma ID formatı.'));
+            }
+
             const discussion = await DiscussionService.getDiscussionDetails(id);
             
             res.json({

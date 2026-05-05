@@ -30,6 +30,30 @@ class UserService {
     }
 
     /**
+     * @desc    Kullanıcıyı takip et
+     */
+    async followUser(userId: string) {
+        try {
+            const response = await apiClient.post(`/users/${userId}/follow`);
+            return response.data;
+        } catch (error: any) {
+            this.handleError(error);
+        }
+    }
+
+    /**
+     * @desc    Önerilen kullanıcıları getir
+     */
+    async getSuggestedUsers() {
+        try {
+            const response = await apiClient.get('/users/suggested');
+            return response.data;
+        } catch (error: any) {
+            this.handleError(error);
+        }
+    }
+
+    /**
      * @desc    Merkezi Hata Yönetimi
      */
     private handleError(error: any) {
