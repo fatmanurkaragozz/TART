@@ -7,14 +7,11 @@ export function DevNav() {
   const [isOpen, setIsOpen] = useState(false);
 
   const pages = [
-    { name: "Landing", path: "/" },
-    { name: "Login", path: "/login" },
-    { name: "Register", path: "/register" },
-    { name: "Home Feed", path: "/home" },
-    { name: "Create Topic", path: "/create-topic" },
-    { name: "Topic Detail", path: "/topic/1" },
-    { name: "Notifications", path: "/notifications" },
-    { name: "Profile", path: "/profile" },
+    { name: "Açılış Sayfası", path: "/" },
+    { name: "Ana Sayfa", path: "/home" },
+    { name: "Tartışma Oluştur", path: "/create-topic" },
+    { name: "Bildirimler", path: "/notifications" },
+    { name: "Profil", path: "/profile" },
     { name: "Manifesto", path: "/manifesto" },
   ];
 
@@ -57,16 +54,7 @@ export function DevNav() {
             minWidth: "200px",
           }}
         >
-          <div
-            className="mb-3 pb-2 typewriter"
-            style={{
-              fontSize: "0.85rem",
-              color: "#6B6B5F",
-              borderBottom: "1px solid #D4D2C8",
-            }}
-          >
-            🔧 Dev Navigation
-          </div>
+
 
           <div className="space-y-1.5">
             {pages.map((page) => (

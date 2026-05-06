@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { motion } from "motion/react";
-import { Search, Bell, Plus, BookOpen, Tag as TagIcon, TrendingUp, Users, MessageCircle, LogOut } from "lucide-react";
+import { motion, useScroll, useTransform } from "motion/react";
+import { Search, Bell, Plus, BookOpen, Tag as TagIcon, TrendingUp, Users, MessageCircle, LogOut, ShieldCheck } from "lucide-react";
 import { useNavigate } from "react-router";
 import { TopicCard } from "../components/TopicCard";
 import { TopicSkeleton } from "../components/Skeleton";
@@ -12,6 +12,9 @@ import userService from "../../services/userService";
 import { toast } from "sonner";
 import logo from "../../assets/logo.png";
 import authService from "../../services/authService";
+import notificationService from "../../services/notificationService";
+import { formatDistanceToNow } from "date-fns";
+import { tr } from "date-fns/locale";
 
 const tags = [
   "Eğitim",
@@ -20,6 +23,8 @@ const tags = [
   "Tartışma Kültürü",
   "Akademik Hayat",
   "Sosyal Sorunlar",
+  "Teknoloji",
+  "Politika",
 ];
 
 export default function Home() {
@@ -30,7 +35,12 @@ export default function Home() {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"discover" | "following">("discover");
+  const [hasUnreadNotifications, setHasUnreadNotifications] = useState(false);
   const navigate = useNavigate();
+
+  const { scrollY } = useScroll();
+  const y1 = useTransform(scrollY, [0, 2000], [0, -200]);
+  const y2 = useTransform(scrollY, [0, 2000], [0, -100]);
 
   const handleLogout = () => {
     authService.logout();
@@ -40,6 +50,7 @@ export default function Home() {
 
   useEffect(() => {
     fetchSideData();
+    fetchNotificationStatus();
   }, []);
 
   useEffect(() => {
@@ -49,6 +60,16 @@ export default function Home() {
 
     return () => clearTimeout(delayDebounceFn);
   }, [searchQuery, selectedTags, activeTab]);
+
+  const fetchNotificationStatus = async () => {
+    try {
+      const res = await notificationService.getMyNotifications();
+      const unread = res.data?.some((n: any) => !n.isRead);
+      setHasUnreadNotifications(!!unread);
+    } catch (error) {
+      console.error("Bildirim durumu hatası:", error);
+    }
+  };
 
   const fetchSideData = async () => {
     try {
@@ -106,15 +127,62 @@ export default function Home() {
   return (
     <div
       className="min-h-screen"
-      style={{ background: "#FAFAF5", position: "relative" }}
+      style={{ background: "#FAFAF5", position: "relative", overflowX: "hidden" }}
     >
       {/* Paper texture overlay */}
       <div
-        className="fixed inset-0 opacity-[0.06] pointer-events-none"
+        className="fixed inset-0 opacity-[0.06] pointer-events-none z-0"
         style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='2.5' numOctaves='3' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' /%3E%3C/svg%3E")`,
         }}
       />
+
+      {/* Back Layer - Crumpled Paper (Parallax) */}
+      <motion.div
+        style={{ y: y1 }}
+        className="fixed inset-0 opacity-[0.15] pointer-events-none z-0"
+      >
+        <div
+          className="w-full h-[150vh]"
+          style={{
+            backgroundImage: `url("https://images.unsplash.com/photo-1723220217596-45d4b51e2804?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxoYW5kd3JpdHRlbiUyMG5vdGVzJTIwcGFwZXJ8ZW58MXx8fHwxNzY3NzE5OTMyfDA&ixlib=rb-4.1.0&q=80&w=1080")`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            filter: "grayscale(100%) contrast(0.8)",
+          }}
+        />
+      </motion.div>
+
+      {/* Middle Layer - Notebook Lines (Parallax) */}
+      <motion.div
+        style={{ y: y2 }}
+        className="fixed inset-0 opacity-[0.08] pointer-events-none z-0"
+      >
+        <svg className="w-full h-[150vh]" xmlns="http://www.w3.org/2000/svg">
+          {Array.from({ length: 60 }).map((_, i) => (
+            <line
+              key={i}
+              x1="0"
+              y1={i * 40 + 20}
+              x2="100%"
+              y2={i * 40 + 20}
+              stroke="#6B6B5F"
+              strokeWidth="0.5"
+              opacity="0.3"
+            />
+          ))}
+          {/* Red margin line */}
+          <line
+            x1="80"
+            y1="0"
+            x2="80"
+            y2="100%"
+            stroke="#C44536"
+            strokeWidth="1"
+            opacity="0.2"
+          />
+        </svg>
+      </motion.div>
 
       {/* Navbar */}
       <nav
@@ -128,7 +196,7 @@ export default function Home() {
           <div className="flex items-center justify-between h-16 gap-8">
             {/* Logo */}
             <a
-              href="/home"
+              href="/"
               className="flex items-center gap-2 flex-shrink-0 transition-opacity hover:opacity-70"
             >
               <img src={logo} alt="TART Logo" className="w-12 h-12 object-contain" />
@@ -208,11 +276,13 @@ export default function Home() {
                 }}
               >
                 <Bell className="w-5 h-5" style={{ color: "#6B6B5F" }} />
-                {/* Notification badge - Level 1 color accent */}
-                <div
-                  className="absolute -top-1 -right-1 w-2 h-2 rounded-full"
-                  style={{ background: "#4A90E2" }}
-                />
+                {/* Notification badge - Dynamic */}
+                {hasUnreadNotifications && (
+                  <div
+                    className="absolute -top-1 -right-1 w-2 h-2 rounded-full"
+                    style={{ background: "#4A90E2" }}
+                  />
+                )}
               </motion.a>
 
               {/* Profile */}
@@ -223,6 +293,15 @@ export default function Home() {
 
                 return (
                   <div className="flex items-center gap-2">
+                    {user.role === 'admin' && (
+                      <a 
+                        href="/admin" 
+                        className="p-2 transition-all hover:bg-paper border border-[#D4D2C8] rounded-sm group"
+                        title="Admin Paneli"
+                      >
+                        <ShieldCheck className="w-4 h-4 text-[#C44536]" />
+                      </a>
+                    )}
                     <a
                       href="/profile"
                       className="flex items-center gap-2 p-1.5 transition-opacity hover:opacity-70"
@@ -315,7 +394,7 @@ export default function Home() {
                   <TopicCard key={topic.id} topic={{
                     ...topic,
                     preview: topic.content.substring(0, 150) + "...",
-                    lastActivity: "Şimdi", // Gerçek veride yoksa
+                    lastActivity: formatDistanceToNow(new Date(topic.updatedAt), { addSuffix: true, locale: tr }),
                     colorLevel: topic.voteScore > 5 ? 1 : 0
                   }} delay={index * 0.05} />
                 ))}

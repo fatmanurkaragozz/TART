@@ -7,6 +7,8 @@ import commentRoutes from './routes/commentRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
+import contactRoutes from './routes/contactRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
 import errorHandler from './middleware/errorHandler.js';
 import ApiError from './utils/ApiError.js';
 
@@ -38,6 +40,8 @@ app.use('/api/v1/discussions', discussionRoutes);
 app.use('/api/v1/comments', commentRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
+app.use('/api/v1/contact', contactRoutes);
+app.use('/api/v1/admin', adminRoutes);
 
 
 // 6. 404

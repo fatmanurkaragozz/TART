@@ -45,7 +45,7 @@ export function Navbar() {
               Manifesto
             </a>
             <NavLink
-              to="/register"
+              to="/login"
               className="transition-colors"
               style={{ color: "#6B6B5F", fontSize: "0.95rem" }}
               onMouseEnter={(e) => e.currentTarget.style.color = "#2C2C28"}

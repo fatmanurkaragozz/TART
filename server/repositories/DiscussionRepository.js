@@ -39,7 +39,7 @@ class DiscussionRepository {
         
         if (tag) {
             where.tags = {
-                has: tag
+                array_contains: tag
             };
         }
 
