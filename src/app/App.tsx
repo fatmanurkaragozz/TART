@@ -161,7 +161,7 @@ export default function App() {
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 mb-8">
-                <NavLink to="/login" className="w-full sm:w-auto">
+                <NavLink to={localStorage.getItem('token') ? "/home" : "/login"} className="w-full sm:w-auto">
                   <motion.div
                     whileHover={{ scale: 1.02, y: -2 }}
                     whileTap={{ scale: 0.98, y: 0 }}
@@ -645,7 +645,7 @@ export default function App() {
             <p className="text-lg mb-10 handwritten" style={{ color: "#6B6B5F", lineHeight: 1.8 }}>
               TART topluluğuna katıl, düşüncelerini özgürce ifade et ve eleştirel düşünme kültürüne katkıda bulun.\n            </p>
 
-            <NavLink to="/login">
+            <NavLink to={localStorage.getItem('token') ? "/home" : "/login"}>
               <motion.div
                 whileHover={{ scale: 1.03, y: -3 }}
                 whileTap={{ scale: 0.97, y: 0 }}
