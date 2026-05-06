@@ -97,9 +97,7 @@ class DiscussionRepository {
                                     username: true
                                 }
                             },
-                            _count: {
-                                select: { votes: true }
-                            }
+                            votes: true
                         },
                         orderBy: {
                             createdAt: 'asc'
@@ -118,6 +116,21 @@ class DiscussionRepository {
         }
 
         return discussion;
+    }
+
+    /**
+     * @desc    Tartışmayı güncelle
+     */
+    async update(id, discussionData) {
+        const { title, content, tags } = discussionData;
+        return await prisma.discussion.update({
+            where: { id },
+            data: {
+                title,
+                content,
+                tags: tags || undefined
+            }
+        });
     }
 
     /**
