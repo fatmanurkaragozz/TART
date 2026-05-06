@@ -42,6 +42,18 @@ class DiscussionService {
     }
 
     /**
+     * @desc    Tartışmayı güncelle
+     */
+    async updateDiscussion(id: string, discussionData: { title?: string; content?: string; tags?: string[] }) {
+        try {
+            const response = await api.put(`/discussions/${id}`, discussionData);
+            return response.data;
+        } catch (error: any) {
+            this.handleError(error);
+        }
+    }
+
+    /**
      * @desc    Tartışmayı sil
      */
     async deleteDiscussion(id: string) {

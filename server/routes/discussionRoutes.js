@@ -14,6 +14,7 @@ router.post('/', protect, DiscussionController.createDiscussion);
 
 // 3. Parametreli Rotalar
 router.get('/:id', DiscussionController.getDiscussionById);
+router.put('/:id', protect, DiscussionController.updateDiscussion);
 router.delete('/:id', protect, DiscussionController.deleteDiscussion);
 router.post('/:id/vote', protect, DiscussionController.voteDiscussion);
 

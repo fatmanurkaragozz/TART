@@ -74,6 +74,25 @@ class DiscussionController {
         }
     }
 
+    async updateDiscussion(req, res, next) {
+        try {
+            const { id } = req.params;
+            const { title, content, tags } = req.body;
+            const userId = req.user.id;
+            const userRole = req.user.role;
+
+            const discussion = await DiscussionService.updateDiscussion(id, { title, content, tags }, userId, userRole);
+
+            res.json({
+                success: true,
+                message: 'Tartışma başarıyla güncellendi',
+                data: discussion
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
     async deleteDiscussion(req, res, next) {
         try {
             const { id } = req.params;

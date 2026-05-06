@@ -25,6 +25,28 @@ class CommentController {
     }
 
     /**
+     * @desc    Yorum Güncelle
+     */
+    async updateComment(req, res, next) {
+        try {
+            const { id } = req.params;
+            const { content } = req.body;
+            const userId = req.user.id;
+            const userRole = req.user.role;
+
+            const comment = await CommentService.updateComment(id, content, userId, userRole);
+
+            res.status(200).json({
+                success: true,
+                message: 'Yorum başarıyla güncellendi',
+                data: comment
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
      * @desc    Yorum Sil
      */
     async deleteComment(req, res, next) {

@@ -16,6 +16,7 @@ router.post('/', protect, CommentController.addComment);
  * @desc    Yorum Sil
  * @access  Private (Sahibi veya Admin)
  */
+router.put('/:id', protect, CommentController.updateComment);
 router.delete('/:id', protect, CommentController.deleteComment);
 
 /**
