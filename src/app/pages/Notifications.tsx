@@ -36,6 +36,15 @@ export default function Notifications() {
     }
   };
 
+  const handleMarkAllAsRead = async () => {
+    try {
+      await notificationService.markAllAsRead();
+      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+    } catch (err) {
+      console.error("Bildirimler işaretlenemedi:", err);
+    }
+  };
+
   return (
     <div
       className="min-h-screen"
@@ -66,22 +75,41 @@ export default function Notifications() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
+          className="mb-8 flex items-end justify-between gap-4"
         >
-          <h1
-            className="mb-2 typewriter"
-            style={{
-              fontSize: "1.75rem",
-              color: "#2C2C28",
-              fontWeight: 400,
-            }}
-          >
-            Bildirimler
-          </h1>
-          <div
-            className="h-px w-24"
-            style={{ background: "#6B6B5F", opacity: 0.3 }}
-          />
+          <div>
+            <h1
+              className="mb-2 typewriter"
+              style={{
+                fontSize: "1.75rem",
+                color: "#2C2C28",
+                fontWeight: 400,
+              }}
+            >
+              Bildirimler
+            </h1>
+            <div
+              className="h-px w-24"
+              style={{ background: "#6B6B5F", opacity: 0.3 }}
+            />
+          </div>
+
+          {notifications.some(n => !n.isRead) && (
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={handleMarkAllAsRead}
+              className="text-xs typewriter px-4 py-2 transition-all"
+              style={{
+                background: "transparent",
+                border: "1px solid #4A90E2",
+                color: "#4A90E2",
+                borderRadius: "2px",
+              }}
+            >
+              Tümünü Okundu İşaretle
+            </motion.button>
+          )}
         </motion.div>
 
         {/* Notifications List */}

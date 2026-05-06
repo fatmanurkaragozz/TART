@@ -42,16 +42,16 @@ export function Footer() {
               Hukuki
             </h4>
             <div className="flex flex-col gap-2 handwritten">
-              <a href="#" className="text-sm hover:opacity-70 transition-opacity" style={{ color: "#6B6B5F" }}>
+              <a href="/privacy" className="text-sm hover:opacity-70 transition-opacity" style={{ color: "#6B6B5F" }}>
                 Gizlilik Politikası
               </a>
-              <a href="#" className="text-sm hover:opacity-70 transition-opacity" style={{ color: "#6B6B5F" }}>
+              <a href="/terms" className="text-sm hover:opacity-70 transition-opacity" style={{ color: "#6B6B5F" }}>
                 Kullanım Koşulları
               </a>
-              <a href="#" className="text-sm hover:opacity-70 transition-opacity" style={{ color: "#6B6B5F" }}>
+              <a href="/guidelines" className="text-sm hover:opacity-70 transition-opacity" style={{ color: "#6B6B5F" }}>
                 Topluluk Kuralları
               </a>
-              <a href="#" className="text-sm hover:opacity-70 transition-opacity" style={{ color: "#6B6B5F" }}>
+              <a href="/contact" className="text-sm hover:opacity-70 transition-opacity" style={{ color: "#6B6B5F" }}>
                 İletişim
               </a>
             </div>
@@ -59,17 +59,16 @@ export function Footer() {
         </div>
 
         <div className="pt-6 flex flex-col md:flex-row justify-between items-center gap-4 handwritten" style={{ borderTop: "1px solid #D4D2C8" }}>
-          <p className="text-sm" style={{ color: "#6B6B5F" }}>
-            © 2026 TART. Tüm hakları saklıdır.
+          <p className="text-sm text-center md:text-left flex flex-col md:flex-row md:gap-2" style={{ color: "#6B6B5F" }}>
+            <span>© 2026 TART. Tüm hakları saklıdır.</span>
+            <span className="hidden md:inline">|</span>
+            <span>Fatma Nur Karagöz</span>
           </p>
           <div className="flex gap-4">
-            <a href="#" className="text-sm hover:opacity-70 transition-opacity" style={{ color: "#6B6B5F" }}>
-              Twitter
-            </a>
-            <a href="#" className="text-sm hover:opacity-70 transition-opacity" style={{ color: "#6B6B5F" }}>
+            <a href="https://www.instagram.com/mind_of_dev1/" target="_blank" rel="noopener noreferrer" className="text-sm hover:opacity-70 transition-opacity" style={{ color: "#6B6B5F" }}>
               Instagram
             </a>
-            <a href="#" className="text-sm hover:opacity-70 transition-opacity" style={{ color: "#6B6B5F" }}>
+            <a href="https://www.linkedin.com/in/fatma-nur-karag%C3%B6z-78678a294/" target="_blank" rel="noopener noreferrer" className="text-sm hover:opacity-70 transition-opacity" style={{ color: "#6B6B5F" }}>
               LinkedIn
             </a>
           </div>
