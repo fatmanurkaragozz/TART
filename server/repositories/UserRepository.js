@@ -162,8 +162,9 @@ class UserRepository {
      * @desc    Önerilen kullanıcıları getir (En çok takipçisi olanlar)
      */
     async findSuggestedUsers(excludeUserId) {
-        return await prisma.user.findMany({
-            take: 5,
+        // Havuz oluşturmak için daha fazla kullanıcı çek (örneğin 30)
+        const users = await prisma.user.findMany({
+            take: 30,
             where: {
                 id: { not: excludeUserId },
                 ...(excludeUserId ? {
@@ -175,6 +176,7 @@ class UserRepository {
             select: {
                 id: true,
                 username: true,
+                fullName: true,
                 _count: {
                     select: { followedBy: true }
                 }
@@ -183,6 +185,10 @@ class UserRepository {
                 followedBy: { _count: 'desc' }
             }
         });
+
+        // Kullanıcıları rastgele karıştır ve ilk 5'ini al
+        const shuffledUsers = users.sort(() => 0.5 - Math.random());
+        return shuffledUsers.slice(0, 5);
     }
 }
 
