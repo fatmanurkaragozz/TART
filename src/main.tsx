@@ -13,6 +13,9 @@ import Profile from "./app/pages/Profile";
 import Manifesto from "./app/pages/Manifesto";
 import ForgotPassword from "./app/pages/ForgotPassword";
 import ResetPassword from "./app/pages/ResetPassword";
+import Legal from "./app/pages/Legal";
+import Contact from "./app/pages/Contact";
+import AdminDashboard from "./app/pages/AdminDashboard";
 import "./styles/theme.css";
 import "./styles/fonts.css";
 import "./styles/index.css";
@@ -71,6 +74,26 @@ const router = createBrowserRouter([
       {
         path: "manifesto",
         Component: Manifesto,
+      },
+      {
+        path: "privacy",
+        element: <Legal type="privacy" />,
+      },
+      {
+        path: "terms",
+        element: <Legal type="terms" />,
+      },
+      {
+        path: "guidelines",
+        element: <Legal type="guidelines" />,
+      },
+      {
+        path: "contact",
+        Component: Contact,
+      },
+      {
+        path: "admin",
+        Component: AdminDashboard,
       },
     ],
   },
