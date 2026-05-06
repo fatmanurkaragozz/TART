@@ -45,7 +45,7 @@ export function Navbar() {
               Manifesto
             </a>
             <NavLink
-              to="/login"
+              to={localStorage.getItem('token') ? "/home" : "/login"}
               className="transition-colors"
               style={{ color: "#6B6B5F", fontSize: "0.95rem" }}
               onMouseEnter={(e) => e.currentTarget.style.color = "#2C2C28"}
@@ -58,16 +58,16 @@ export function Navbar() {
           {/* Desktop CTA Buttons */}
           <div className="hidden md:flex items-center gap-3 typewriter">
             <NavLink
-              to="/login"
+              to={localStorage.getItem('token') ? "/home" : "/login"}
               className="px-5 py-2 transition-colors"
               style={{ color: "#6B6B5F", fontSize: "0.9rem" }}
               onMouseEnter={(e) => e.currentTarget.style.color = "#2C2C28"}
               onMouseLeave={(e) => e.currentTarget.style.color = "#6B6B5F"}
             >
-              Giriş Yap
+              {localStorage.getItem('token') ? "Ana Sayfa" : "Giriş Yap"}
             </NavLink>
             <NavLink
-              to="/register"
+              to={localStorage.getItem('token') ? "/profile" : "/register"}
               className="px-5 py-2 transition-all"
               style={{
                 background: "#2C2C28",
@@ -85,7 +85,7 @@ export function Navbar() {
                 e.currentTarget.style.boxShadow = "none";
               }}
             >
-              Kayıt Ol
+              {localStorage.getItem('token') ? "Profilim" : "Kayıt Ol"}
             </NavLink>
           </div>
         </div>

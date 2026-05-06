@@ -33,6 +33,31 @@ class DiscussionService {
         return discussion;
     }
 
+    async updateDiscussion(id, data, userId, userRole) {
+        const discussion = await DiscussionRepository.findById(id);
+        
+        if (!discussion) {
+            throw new Error('Tartışma bulunamadı');
+        }
+
+        // Sadece sahibi veya admin güncelleyebilir
+        if (discussion.authorId !== userId && userRole !== 'admin') {
+            throw new Error('Bu tartışmayı düzenleme yetkiniz yok');
+        }
+
+        // AI Moderasyon Kontrolü
+        if (data.title) {
+            const titleMod = await ModerationService.analyzeText(data.title);
+            if (!titleMod.isSafe) throw new Error('Yeni başlık topluluk kurallarını ihlal ediyor olabilir.');
+        }
+        if (data.content) {
+            const contentMod = await ModerationService.analyzeText(data.content);
+            if (!contentMod.isSafe) throw new Error('Yeni içerik topluluk kurallarını ihlal ediyor olabilir.');
+        }
+
+        return await DiscussionRepository.update(id, data);
+    }
+
     async deleteDiscussion(id, userId, userRole) {
         const discussion = await DiscussionRepository.findById(id);
         

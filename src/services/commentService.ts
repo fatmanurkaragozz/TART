@@ -18,6 +18,18 @@ class CommentService {
     }
 
     /**
+     * @desc    Yorum güncelle
+     */
+    async updateComment(id: string, content: string) {
+        try {
+            const response = await api.put(`/comments/${id}`, { content });
+            return response.data;
+        } catch (error: any) {
+            this.handleError(error);
+        }
+    }
+
+    /**
      * @desc    Yorum sil
      */
     async deleteComment(id: string) {

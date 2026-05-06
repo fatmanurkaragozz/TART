@@ -56,6 +56,34 @@ class CommentService {
     }
 
     /**
+     * @desc    Yorum güncelle
+     */
+    async updateComment(id, content, userId, userRole) {
+        const comment = await CommentRepository.findById(id);
+        
+        if (!comment) {
+            throw new ApiError(404, 'Yorum bulunamadı');
+        }
+
+        // Sadece sahibi güncelleyebilir (Admin genelde içeriği düzenlemez, siler)
+        if (comment.authorId !== userId) {
+            throw new ApiError(403, 'Bu yorumu düzenleme yetkiniz yok');
+        }
+
+        if (!content || content.trim().length < 2) {
+            throw new ApiError(400, 'Yorum en az 2 karakter olmalıdır');
+        }
+
+        // AI Moderasyon Kontrolü
+        const moderation = await ModerationService.analyzeText(content);
+        if (!moderation.isSafe) {
+            throw new ApiError(400, 'Düzenlenen yorum topluluk kurallarını ihlal ediyor olabilir.');
+        }
+
+        return await CommentRepository.update(id, content.trim());
+    }
+
+    /**
      * @desc    Yorum sil
      */
     async deleteComment(id, userId, userRole) {
