@@ -41,7 +41,7 @@ export const protect = async (req, res, next) => {
 /**
  * @description Role dayalı yetkilendirme (Admin kontrolü vb.)
  */
-export const authorize = (...roles) => {
+export const restrictTo = (...roles) => {
     return (req, res, next) => {
         if (!roles.includes(req.user.role)) {
             return next(new ApiError(403, `Bu işlem için '${req.user.role}' rolü yetkili değil`));
@@ -49,3 +49,5 @@ export const authorize = (...roles) => {
         next();
     };
 };
+
+export const authorize = restrictTo;
