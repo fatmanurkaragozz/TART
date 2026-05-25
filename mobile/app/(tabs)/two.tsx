@@ -197,8 +197,16 @@ export default function ProfileScreen() {
                 text: "Çıkış Yap", 
                 style: "destructive",
                 onPress: async () => {
-                  await authService.logout();
-                  router.replace("/");
+                  try {
+                    await authService.logout();
+                    // Token temizlendi, açılış sayfasına yönlendir
+                    setTimeout(() => {
+                      try { router.dismissAll(); } catch (_) {}
+                      router.replace("/");
+                    }, 300);
+                  } catch (err) {
+                    Alert.alert("Hata", "Çıkış yapılırken bir hata oluştu.");
+                  }
                 }
               }
             ]

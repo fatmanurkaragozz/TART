@@ -45,6 +45,13 @@ class AuthService {
     }
 
     /**
+     * @desc    Kayıtlı Token'ı Getir
+     */
+    getToken() {
+        return localStorage.getItem('token');
+    }
+
+    /**
      * @desc    Şifre Sıfırlama İsteği
      */
     async forgotPassword(email: string) {

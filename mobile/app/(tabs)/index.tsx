@@ -1,15 +1,28 @@
 import { useState, useEffect } from 'react';
-import { FlatList, TouchableOpacity, RefreshControl, View, Text } from 'react-native';
+import { FlatList, TouchableOpacity, RefreshControl, View, Text, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import discussionService from '../../src/services/discussionService';
 import userService from '../../src/services/userService';
-import { MessageSquare, ArrowUpCircle, Clock, UserPlus } from 'lucide-react-native';
-import { Alert } from 'react-native';
+import { MessageSquare, ArrowUp, Clock, TrendingUp, Users, Flame, Sparkles } from 'lucide-react-native';
+
+// Oy sayısına göre renk paleti — notebook işaretleyici teması
+const ACCENT_COLORS = ["#E85D4E", "#4A90E2", "#8B9B7A", "#F6C744", "#9B59B6", "#E67E22"];
+
+const getAccentColor = (index: number) => ACCENT_COLORS[index % ACCENT_COLORS.length];
+
+const getVoteColor = (votes: number) => {
+  if (votes >= 20) return "#8B9B7A";   // yeşil — çok beğenildi
+  if (votes >= 10) return "#F6C744";   // sarı — trend
+  if (votes >= 5)  return "#E85D4E";   // kırmızı — dikkat çekici
+  if (votes >= 2)  return "#4A90E2";   // mavi — aktif
+  return "#9B9B8F";                     // gri — yeni
+};
+
 
 export default function HomeScreen() {
-  const [discussions, setDiscussions] = useState([]);
-  const [trending, setTrending] = useState([]);
-  const [suggestedUsers, setSuggestedUsers] = useState([]);
+  const [discussions, setDiscussions] = useState<any[]>([]);
+  const [trending, setTrending] = useState<any[]>([]);
+  const [suggestedUsers, setSuggestedUsers] = useState<any[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const router = useRouter();
 
@@ -20,9 +33,9 @@ export default function HomeScreen() {
         discussionService.getTrending(),
         userService.getSuggestedUsers()
       ]);
-      setDiscussions(discussionsRes.data);
-      setTrending(trendingRes.data);
-      setSuggestedUsers(suggestedRes.data);
+      setDiscussions(discussionsRes?.data || []);
+      setTrending(trendingRes?.data || []);
+      setSuggestedUsers(suggestedRes?.data || []);
     } catch (error) {
       console.error(error);
     }
@@ -32,7 +45,7 @@ export default function HomeScreen() {
     try {
       await userService.followUser(userId);
       Alert.alert("Başarılı", "Kullanıcı takip edildi.");
-      fetchData(); // Refresh list
+      fetchData();
     } catch (error: any) {
       Alert.alert("Hata", error.message);
     }
@@ -47,9 +60,7 @@ export default function HomeScreen() {
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  useEffect(() => { fetchData(); }, []);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -57,199 +68,379 @@ export default function HomeScreen() {
     setRefreshing(false);
   };
 
-  const getColorAccent = (votes: number) => {
-    if (votes >= 20) return "#8B9B7A"; // personal palette green
-    if (votes >= 10) return "#F6C744"; // marker yellow
-    if (votes >= 5) return "#E85D4E"; // red ballpoint
-    if (votes >= 2) return "#4A90E2"; // ink blue accent
-    return "#6B6B5F"; // monochrome
-  };
-
-  const renderItem = ({ item }: { item: any }) => {
+  // ── Tartışma Kartı ──────────────────────────────────────────────────────────
+  const renderItem = ({ item, index }: { item: any; index: number }) => {
     const votes = item._count?.votes || 0;
-    const accentColor = getColorAccent(votes);
-    
+    const commentCount = item._count?.comments || 0;
+    const accentColor = getAccentColor(index);
+    const voteColor = getVoteColor(votes);
+
     return (
-      <TouchableOpacity 
-        onPress={() => router.push({ pathname: "/modal", params: { id: item.id } })}
-        className="bg-paper p-5 mb-4 border border-border rounded-sm"
-        style={{ shadowColor: "#000", shadowOffset: { width: 3, height: 3 }, shadowOpacity: 0.1, shadowRadius: 0 }}
+      <TouchableOpacity
+        onPress={() => router.push({ pathname: "/modal", params: { id: item.id, accentColor } })}
+        style={{
+          backgroundColor: "#FFFEF5",
+          borderRadius: 2,
+          marginBottom: 16,
+          borderWidth: 1,
+          borderColor: "#D4D2C8",
+          borderLeftWidth: 4,
+          borderLeftColor: accentColor,
+          shadowColor: "#000",
+          shadowOffset: { width: 3, height: 3 },
+          shadowOpacity: 0.1,
+          shadowRadius: 0,
+          elevation: 2,
+          overflow: "hidden",
+        }}
       >
-        <Text 
-          className="text-charcoal text-lg mb-2" 
-          style={{ fontFamily: "Courier", lineHeight: 24 }}
-          numberOfLines={2}
-        >
-          {item.title}
-        </Text>
+        {/* Üst renkli şerit */}
+        <View style={{ height: 3, backgroundColor: accentColor, opacity: 0.25 }} />
 
-        <Text 
-          className="text-pencil text-sm mb-4" 
-          style={{ fontFamily: "System", lineHeight: 20 }}
-          numberOfLines={2}
-        >
-          {item.content}
-        </Text>
+        <View style={{ padding: 16 }}>
+          {/* Başlık — tamamen aksan rengiyle */}
+          <Text
+            style={{
+              fontFamily: "Courier",
+              fontSize: 16,
+              lineHeight: 24,
+              color: accentColor,
+            }}
+            numberOfLines={2}
+          >
+            {item.title}
+          </Text>
 
-        {/* Tags simulation */}
-        <View className="flex-row items-center justify-between mb-4 flex-wrap">
-          <View className="flex-row flex-wrap gap-2">
-            <View 
-              className="px-2 py-1 rounded-sm border"
-              style={{ borderColor: votes > 0 ? accentColor : "#D4D2C8" }}
-            >
-              <Text 
-                className="text-xs" 
-                style={{ fontFamily: "System", color: votes > 0 ? accentColor : "#6B6B5F" }}
+          {/* İçerik */}
+          <Text
+            style={{
+              fontFamily: "System",
+              fontSize: 13,
+              color: "#6B6B5F",
+              lineHeight: 20,
+              marginTop: 8,
+              marginBottom: 12,
+            }}
+            numberOfLines={2}
+          >
+            {item.content}
+          </Text>
+
+          {/* Alt satır: Yazar + tarih + oy/yorum */}
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+            {/* Sol: yazar baş harfi + tarih */}
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              <View
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: 2,
+                  backgroundColor: accentColor + "22",
+                  borderWidth: 1,
+                  borderColor: accentColor + "55",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
               >
-                Tartışma
-              </Text>
+                <Text style={{ fontFamily: "Courier", fontSize: 11, color: accentColor, fontWeight: "bold" }}>
+                  {item.author?.username?.substring(0, 2).toUpperCase() || "??"}
+                </Text>
+              </View>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                <Clock size={11} color="#9B9B8F" />
+                <Text style={{ fontFamily: "System", fontSize: 11, color: "#9B9B8F" }}>
+                  {new Date(item.createdAt).toLocaleDateString("tr-TR")}
+                </Text>
+              </View>
+            </View>
+
+            {/* Sağ: yorum + oy */}
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                <MessageSquare size={13} color="#6B6B5F" />
+                <Text style={{ fontFamily: "System", fontSize: 12, color: "#6B6B5F" }}>{commentCount}</Text>
+              </View>
+
+              <TouchableOpacity
+                onPress={() => handleVoteDiscussion(item.id, 1)}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 4,
+                  paddingHorizontal: 10,
+                  paddingVertical: 5,
+                  borderRadius: 2,
+                  borderWidth: 1,
+                  borderColor: voteColor + "66",
+                  backgroundColor: voteColor + "11",
+                }}
+              >
+                <ArrowUp size={13} color={voteColor} />
+                <Text style={{ fontFamily: "Courier", fontSize: 12, color: voteColor, fontWeight: "bold" }}>
+                  {votes}
+                </Text>
+              </TouchableOpacity>
             </View>
           </View>
 
-          <View className="px-4 py-1.5 border border-charcoal rounded-sm">
-            <Text className="text-charcoal text-xs" style={{ fontFamily: "Courier" }}>Katıl</Text>
-          </View>
-        </View>
-
-        <View className="flex-row items-center justify-between pt-3 border-t border-border mt-1">
-          <View className="flex-row items-center gap-1">
-            <Clock size={14} color="#9B9B8F" />
-            <Text className="text-xs" style={{ fontFamily: "System", color: "#9B9B8F" }}>
-              {new Date(item.createdAt).toLocaleDateString()}
-            </Text>
-          </View>
-          <View className="flex-row items-center gap-3">
-            <View className="flex-row items-center gap-1">
-              <MessageSquare size={14} color="#6B6B5F" />
-              <Text className="text-pencil text-xs" style={{ fontFamily: "System" }}>{item._count?.comments || 0}</Text>
+          {/* Oy oranı çizgisi */}
+          {votes > 0 && (
+            <View style={{ marginTop: 12, height: 2, backgroundColor: "#F0EDE5", borderRadius: 1 }}>
+              <View
+                style={{
+                  height: 2,
+                  width: `${Math.min(100, 15 + votes * 8)}%`,
+                  backgroundColor: voteColor,
+                  borderRadius: 1,
+                  opacity: 0.7,
+                }}
+              />
             </View>
-            <TouchableOpacity 
-              onPress={() => handleVoteDiscussion(item.id, 1)}
-              className="flex-row items-center gap-1 bg-paper px-2 py-1 rounded-sm border border-border"
-            >
-              <ArrowUpCircle size={14} color="#8B9B7A" />
-              <Text className="text-sage text-xs font-bold" style={{ fontFamily: "System" }}>{votes}</Text>
-            </TouchableOpacity>
-          </View>
+          )}
         </View>
-
-        {/* Color Accent Line based on Votes */}
-        {votes > 0 && (
-          <View 
-            className="h-0.5 mt-4 opacity-40 rounded-full" 
-            style={{ backgroundColor: accentColor, width: `${Math.min(100, 20 + votes * 10)}%` }} 
-          />
-        )}
       </TouchableOpacity>
     );
   };
 
+  // ── Header içeriği ──────────────────────────────────────────────────────────
+  const ListHeader = () => (
+    <View style={{ paddingTop: 16, marginBottom: 8 }}>
+
+      {/* Sayfa başlığı */}
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+        <View>
+          <Text style={{ fontFamily: "Courier", fontSize: 24, color: "#E85D4E" }}>
+            Tartışmalar
+          </Text>
+          <View style={{ height: 2, width: 48, backgroundColor: "#E85D4E", opacity: 0.5, marginTop: 4 }} />
+        </View>
+        <TouchableOpacity
+          onPress={() => router.push("/create-topic")}
+          style={{
+            paddingHorizontal: 16,
+            paddingVertical: 8,
+            backgroundColor: "#2C2C28",
+            borderRadius: 2,
+            shadowColor: "#000",
+            shadowOffset: { width: 2, height: 2 },
+            shadowOpacity: 0.15,
+            shadowRadius: 0,
+            elevation: 2,
+          }}
+        >
+          <Text style={{ fontFamily: "Courier", fontSize: 13, color: "#F5F5F0" }}>+ Yeni</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* ─── TREND TARTIŞMALAR ─── */}
+      {trending.length > 0 && (
+        <View style={{ marginBottom: 24 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 12 }}>
+            <Flame size={15} color="#E85D4E" />
+            <Text style={{ fontFamily: "Courier", fontSize: 12, color: "#E85D4E", letterSpacing: 1.5, textTransform: "uppercase" }}>
+              Trend
+            </Text>
+          </View>
+
+          <FlatList
+            horizontal
+            data={trending}
+            keyExtractor={(item: any) => `trend-${item.id}`}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingRight: 8 }}
+            renderItem={({ item, index }: { item: any; index: number }) => {
+              const color = getAccentColor(index);
+              return (
+                <TouchableOpacity
+                  onPress={() => router.push({ pathname: "/modal", params: { id: item.id, accentColor: color } })}
+                  style={{
+                    backgroundColor: "#FFFEF5",
+                    padding: 14,
+                    marginRight: 12,
+                    borderRadius: 2,
+                    width: 200,
+                    borderWidth: 1,
+                    borderColor: "#D4D2C8",
+                    borderTopWidth: 3,
+                    borderTopColor: color,
+                    shadowColor: "#000",
+                    shadowOffset: { width: 2, height: 2 },
+                    shadowOpacity: 0.08,
+                    shadowRadius: 0,
+                    elevation: 1,
+                  }}
+                >
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 }}>
+                    <TrendingUp size={13} color={color} />
+                    <Text style={{ fontFamily: "System", fontSize: 11, color: color }}>Trend</Text>
+                  </View>
+                  <Text
+                    style={{ fontFamily: "Courier", fontSize: 14, color: "#2C2C28", lineHeight: 20 }}
+                    numberOfLines={2}
+                  >
+                    {item.title}
+                  </Text>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 10 }}>
+                    <MessageSquare size={11} color="#9B9B8F" />
+                    <Text style={{ fontFamily: "System", fontSize: 11, color: "#9B9B8F" }}>
+                      {item._count?.comments || 0} yanıt
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            }}
+          />
+        </View>
+      )}
+
+      {/* Ayraç */}
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 20 }}>
+        <View style={{ flex: 1, height: 1, backgroundColor: "#D4D2C8" }} />
+        <Text style={{ fontFamily: "System", fontSize: 10, color: "#9B9B8F", letterSpacing: 1 }}>•</Text>
+        <View style={{ flex: 1, height: 1, backgroundColor: "#D4D2C8" }} />
+      </View>
+
+      {/* ─── ÖNERİLEN KULLANICILAR ─── */}
+      {suggestedUsers.length > 0 && (
+        <View style={{ marginBottom: 24 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 12 }}>
+            <Sparkles size={15} color="#4A90E2" />
+            <Text style={{ fontFamily: "Courier", fontSize: 12, color: "#4A90E2", letterSpacing: 1.5, textTransform: "uppercase" }}>
+              Kimi Takip Etmeli?
+            </Text>
+          </View>
+
+          <FlatList
+            horizontal
+            data={suggestedUsers}
+            keyExtractor={(item: any) => `suggested-${item.id}`}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingRight: 8 }}
+            renderItem={({ item, index }: { item: any; index: number }) => {
+              const color = getAccentColor(index + 2);
+              return (
+                <View
+                  style={{
+                    backgroundColor: "#FFFEF5",
+                    padding: 14,
+                    marginRight: 12,
+                    borderRadius: 2,
+                    width: 160,
+                    alignItems: "center",
+                    borderWidth: 1,
+                    borderColor: "#D4D2C8",
+                    shadowColor: "#000",
+                    shadowOffset: { width: 2, height: 2 },
+                    shadowOpacity: 0.08,
+                    shadowRadius: 0,
+                    elevation: 1,
+                  }}
+                >
+                  {/* Avatar dairesi renkli */}
+                  <View
+                    style={{
+                      width: 48,
+                      height: 48,
+                      borderRadius: 2,
+                      backgroundColor: color + "20",
+                      borderWidth: 2,
+                      borderColor: color + "55",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      marginBottom: 8,
+                    }}
+                  >
+                    <Text style={{ fontFamily: "Courier", fontSize: 18, color: color, fontWeight: "bold" }}>
+                      {item.username?.substring(0, 2).toUpperCase() || "??"}
+                    </Text>
+                  </View>
+
+                  <Text
+                    style={{ fontFamily: "Courier", fontSize: 13, color: "#2C2C28", marginBottom: 12 }}
+                    numberOfLines={1}
+                  >
+                    @{item.username}
+                  </Text>
+
+                  <TouchableOpacity
+                    onPress={() => handleFollowUser(item.id)}
+                    style={{
+                      paddingHorizontal: 16,
+                      paddingVertical: 6,
+                      borderRadius: 2,
+                      borderWidth: 1.5,
+                      borderColor: color,
+                      backgroundColor: color + "11",
+                      width: "100%",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Text style={{ fontFamily: "Courier", fontSize: 11, color: color, fontWeight: "bold" }}>
+                      Takip Et
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              );
+            }}
+          />
+        </View>
+      )}
+
+      {/* İkinci ayraç */}
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 16 }}>
+        <View style={{ flex: 1, height: 1, backgroundColor: "#D4D2C8" }} />
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+          <MessageSquare size={11} color="#9B9B8F" />
+          <Text style={{ fontFamily: "System", fontSize: 10, color: "#9B9B8F" }}>Tüm tartışmalar</Text>
+        </View>
+        <View style={{ flex: 1, height: 1, backgroundColor: "#D4D2C8" }} />
+      </View>
+    </View>
+  );
+
   return (
-    <View className="flex-1 bg-background px-4">
+    <View style={{ flex: 1, backgroundColor: "#F5F5F0", paddingHorizontal: 16 }}>
       <FlatList
         data={discussions}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 20, paddingTop: 16 }}
+        contentContainerStyle={{ paddingBottom: 32 }}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#2C2C28" />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#E85D4E" />
         }
-        ListHeaderComponent={() => (
-          <View className="mb-6">
-            <View className="flex-row items-center justify-between mb-6">
-              <View>
-                <Text className="text-2xl text-charcoal mb-1" style={{ fontFamily: "Courier" }}>Tartışmalar</Text>
-                <View className="h-0.5 bg-pencil w-12 opacity-30" />
-              </View>
-              <TouchableOpacity 
-                onPress={() => router.push("/create-topic")}
-                className="px-4 py-2 bg-charcoal rounded-sm"
-                style={{ shadowColor: "#000", shadowOffset: { width: 2, height: 2 }, shadowOpacity: 0.15, shadowRadius: 0 }}
-              >
-                <Text className="text-paper font-bold" style={{ fontFamily: "Courier" }}>+ Yeni</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Trending Section */}
-            {trending.length > 0 && (
-              <View className="mb-6">
-                <Text className="text-pencil text-sm mb-4 uppercase tracking-widest" style={{ fontFamily: "Courier" }}>Trend Tartışmalar</Text>
-                <FlatList
-                  horizontal
-                  data={trending}
-                  keyExtractor={(item: any) => `trend-${item.id}`}
-                  showsHorizontalScrollIndicator={false}
-                  renderItem={({ item }: { item: any }) => (
-                    <TouchableOpacity 
-                      onPress={() => router.push({ pathname: "/modal", params: { id: item.id } })}
-                      className="bg-paper p-4 mr-4 border border-border rounded-sm w-64"
-                      style={{ shadowColor: "#000", shadowOffset: { width: 2, height: 2 }, shadowOpacity: 0.05, shadowRadius: 0 }}
-                    >
-                      <Text className="text-charcoal text-base mb-3" style={{ fontFamily: "Courier" }} numberOfLines={2}>
-                        {item.title}
-                      </Text>
-                      <View className="flex-row items-center gap-1">
-                        <MessageSquare size={12} color="#6B6B5F" />
-                        <Text className="text-pencil text-xs" style={{ fontFamily: "System" }}>{item._count?.comments || 0} yanıt</Text>
-                      </View>
-                    </TouchableOpacity>
-                  )}
-                />
-              </View>
-            )}
-            
-            <View className="h-px bg-border mb-6 opacity-50" />
-
-            {/* Suggested Users Section */}
-            {suggestedUsers.length > 0 && (
-              <View className="mb-6">
-                <Text className="text-pencil text-sm mb-4 uppercase tracking-widest" style={{ fontFamily: "Courier" }}>Kimi Takip Etmeli?</Text>
-                <FlatList
-                  horizontal
-                  data={suggestedUsers}
-                  keyExtractor={(item: any) => `suggested-${item.id}`}
-                  showsHorizontalScrollIndicator={false}
-                  renderItem={({ item }: { item: any }) => (
-                    <View 
-                      className="bg-paper p-4 mr-4 border border-border rounded-sm w-48 items-center"
-                      style={{ shadowColor: "#000", shadowOffset: { width: 2, height: 2 }, shadowOpacity: 0.05, shadowRadius: 0 }}
-                    >
-                      <View className="w-12 h-12 bg-border rounded-sm items-center justify-center mb-3">
-                        <Text className="text-charcoal text-lg" style={{ fontFamily: "Courier" }}>
-                          {item.username.substring(0, 2).toUpperCase()}
-                        </Text>
-                      </View>
-                      <Text className="text-charcoal text-sm mb-4" style={{ fontFamily: "Courier" }} numberOfLines={1}>
-                        @{item.username}
-                      </Text>
-                      <TouchableOpacity 
-                        onPress={() => handleFollowUser(item.id)}
-                        className="px-4 py-1.5 border border-charcoal rounded-sm w-full items-center"
-                      >
-                        <Text className="text-charcoal text-xs font-bold" style={{ fontFamily: "Courier" }}>Takip Et</Text>
-                      </TouchableOpacity>
-                    </View>
-                  )}
-                />
-              </View>
-            )}
-
-            <View className="h-px bg-border mb-6 opacity-50" />
-          </View>
-        )}
+        ListHeaderComponent={ListHeader}
         ListEmptyComponent={() => (
-          <View className="py-20 items-center bg-paper border-2 border-dashed border-border rounded-sm p-6 mt-4">
-            <Text className="text-pencil text-lg mb-2" style={{ fontFamily: "Courier" }}>İlk tartışmayı sen başlat</Text>
-            <Text className="text-pencil text-sm text-center mb-6" style={{ fontFamily: "System" }}>
+          <View
+            style={{
+              paddingVertical: 48,
+              alignItems: "center",
+              backgroundColor: "#FFFEF5",
+              borderWidth: 2,
+              borderStyle: "dashed",
+              borderColor: "#D4D2C8",
+              borderRadius: 2,
+              padding: 24,
+              marginTop: 8,
+            }}
+          >
+            <MessageSquare size={32} color="#D4D2C8" />
+            <Text style={{ fontFamily: "Courier", fontSize: 16, color: "#6B6B5F", marginTop: 12, marginBottom: 6 }}>
+              İlk tartışmayı sen başlat
+            </Text>
+            <Text style={{ fontFamily: "System", fontSize: 13, color: "#9B9B8F", textAlign: "center", marginBottom: 20, lineHeight: 20 }}>
               Henüz hiç tartışma yok. Topluluğu sen başlat!
             </Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => router.push("/create-topic")}
-              className="px-6 py-3 bg-charcoal rounded-sm"
+              style={{
+                paddingHorizontal: 24,
+                paddingVertical: 10,
+                backgroundColor: "#2C2C28",
+                borderRadius: 2,
+              }}
             >
-              <Text className="text-paper text-sm" style={{ fontFamily: "Courier" }}>+ Yeni Tartışma</Text>
+              <Text style={{ fontFamily: "Courier", fontSize: 13, color: "#F5F5F0" }}>+ Yeni Tartışma</Text>
             </TouchableOpacity>
           </View>
         )}
