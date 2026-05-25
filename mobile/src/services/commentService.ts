@@ -8,7 +8,7 @@ class CommentService {
     /**
      * @desc    Yeni yorum ekle
      */
-    async addComment(commentData: { content: string; discussionId: string }) {
+    async addComment(commentData: { content: string; discussionId: string; parentId?: string }) {
         try {
             const response = await apiClient.post('/comments', commentData);
             return response.data;

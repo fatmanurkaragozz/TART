@@ -8,25 +8,75 @@ import userService from '../src/services/userService';
 import { ThumbsUp as ThumbsUpFilled } from 'lucide-react-native';
 
 export default function TopicDetailScreen() {
-  const { id } = useLocalSearchParams();
+  const { id, accentColor: accentParam } = useLocalSearchParams<{ id: string; accentColor?: string }>();
+  const accentColor = (accentParam as string) || "#6B6B5F";
   const router = useRouter();
   const [topic, setTopic] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [replyText, setReplyText] = useState("");
+  const [replyToId, setReplyToId] = useState<string | null>(null);
+  const [replyToUser, setReplyToUser] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [focusedInput, setFocusedInput] = useState(false);
+  const [nestedComments, setNestedComments] = useState<any[]>([]);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [followLoading, setFollowLoading] = useState(false);
 
   useEffect(() => {
     if (id) {
       fetchTopicDetails();
     }
+    loadCurrentUser();
   }, [id]);
+
+  const loadCurrentUser = async () => {
+    try {
+      const res = await userService.getMyProfile();
+      const me = res?.data;
+      if (me) {
+        setCurrentUserId(me.id);
+      }
+    } catch (e) {
+      // sessiz fail
+    }
+  };
 
   const fetchTopicDetails = async () => {
     try {
       setLoading(true);
       const response = await discussionService.getDiscussionById(id as string);
-      setTopic(response.data);
+      const data = response.data;
+      setTopic(data);
+
+      // Yorumları hiyerarşik yapıya dönüştür
+      const flatComments = data.comments || [];
+      const commentMap = new Map();
+      const roots: any[] = [];
+
+      flatComments.forEach((c: any) => {
+        commentMap.set(c.id, { ...c, replies: [] });
+      });
+
+      flatComments.forEach((c: any) => {
+        if (c.parentId && commentMap.has(c.parentId)) {
+          commentMap.get(c.parentId).replies.push(commentMap.get(c.id));
+        } else if (!c.parentId) {
+          roots.push(commentMap.get(c.id));
+        }
+      });
+      setNestedComments(roots);
+
+      // Takip durumunu profil bilgisiyle kontrol et
+      try {
+        const meRes = await userService.getMyProfile();
+        const me = meRes?.data;
+        if (me) {
+          setCurrentUserId(me.id);
+          const myFollowing: any[] = me.following || [];
+          setIsFollowing(myFollowing.some((u: any) => u.id === data.authorId));
+        }
+      } catch (_) {}
     } catch (error: any) {
       console.error(error);
       Alert.alert("Hata", "Tartışma yüklenemedi.");
@@ -35,20 +85,66 @@ export default function TopicDetailScreen() {
     }
   };
 
+  // Sayfayı spinner göstermeden arka planda güncelle
+  const refreshInBackground = async () => {
+    try {
+      const response = await discussionService.getDiscussionById(id as string);
+      const data = response.data;
+      setTopic(data);
+      const flatComments = data.comments || [];
+      const commentMap = new Map();
+      const roots: any[] = [];
+      flatComments.forEach((c: any) => { commentMap.set(c.id, { ...c, replies: [] }); });
+      flatComments.forEach((c: any) => {
+        if (c.parentId && commentMap.has(c.parentId)) {
+          commentMap.get(c.parentId).replies.push(commentMap.get(c.id));
+        } else if (!c.parentId) {
+          roots.push(commentMap.get(c.id));
+        }
+      });
+      setNestedComments(roots);
+    } catch (_) {}
+  };
+
   const handleVoteTopic = async (value: number) => {
+    // Optimistic update: UI'ı hemen güncelle
+    setTopic((prev: any) => ({
+      ...prev,
+      votes: value === 1
+        ? [...(prev.votes || []), { id: 'temp' }]
+        : (prev.votes || []).slice(0, -1)
+    }));
     try {
       await discussionService.voteDiscussion(id as string, value);
-      fetchTopicDetails();
+      // Arka planda gerçek veriyi senkronize et (spinner olmadan)
+      refreshInBackground();
     } catch (error: any) {
+      // Hata durumunda eski haline geri dönür (background fetch ile)
+      refreshInBackground();
       Alert.alert("Hata", "Oylama işlemi başarısız.");
     }
   };
 
   const handleVoteComment = async (commentId: string, value: number) => {
+    // Optimistic update: yorum oyunu anında güncelle
+    const updateVote = (comments: any[]): any[] =>
+      comments.map((c: any) => {
+        if (c.id === commentId) {
+          return {
+            ...c,
+            votes: value === 1
+              ? [...(c.votes || []), { id: 'temp' }]
+              : (c.votes || []).slice(0, -1),
+          };
+        }
+        return { ...c, replies: updateVote(c.replies || []) };
+      });
+    setNestedComments(prev => updateVote(prev));
     try {
       await commentService.voteComment(commentId, value);
-      fetchTopicDetails();
+      refreshInBackground();
     } catch (error: any) {
+      refreshInBackground();
       Alert.alert("Hata", "Oylama işlemi başarısız.");
     }
   };
@@ -56,10 +152,14 @@ export default function TopicDetailScreen() {
   const handleFollowAuthor = async () => {
     if (!topic.authorId) return;
     try {
+      setFollowLoading(true);
       await userService.followUser(topic.authorId);
+      setIsFollowing(true);
       Alert.alert("Başarılı", "Yazar takip edildi.");
     } catch (error: any) {
       Alert.alert("Hata", error.message);
+    } finally {
+      setFollowLoading(false);
     }
   };
 
@@ -71,9 +171,12 @@ export default function TopicDetailScreen() {
       await commentService.addComment({
         content: replyText,
         discussionId: id as string,
+        parentId: replyToId || undefined
       });
       setReplyText("");
-      fetchTopicDetails(); // Refresh list
+      setReplyToId(null);
+      setReplyToUser(null);
+      refreshInBackground(); // Spinner göstermeden arka planda güncelle
     } catch (error: any) {
       console.error(error);
       Alert.alert("Hata", "Yanıt gönderilemedi.");
@@ -119,15 +222,38 @@ export default function TopicDetailScreen() {
         </TouchableOpacity>
 
         {/* Main Topic Card */}
-        <View 
-          className="bg-paper p-6 mb-8 border-2 border-pencil rounded-sm"
-          style={{ shadowColor: "#000", shadowOffset: { width: 4, height: 4 }, shadowOpacity: 0.15, shadowRadius: 0 }}
+        <View
+          style={{
+            backgroundColor: "#FFFEF5",
+            padding: 24,
+            marginBottom: 32,
+            borderWidth: 2,
+            borderColor: "#6B6B5F",
+            borderLeftWidth: 5,
+            borderLeftColor: accentColor,
+            borderRadius: 2,
+            shadowColor: "#000",
+            shadowOffset: { width: 4, height: 4 },
+            shadowOpacity: 0.15,
+            shadowRadius: 0,
+          }}
         >
           {/* Header */}
           <View className="flex-row justify-between items-start mb-4">
             <View className="flex-row items-center">
-              <View className="w-10 h-10 bg-border items-center justify-center rounded-sm">
-                <Text className="text-charcoal" style={{ fontFamily: "Courier" }}>
+              <View
+                style={{
+                  width: 40,
+                  height: 40,
+                  backgroundColor: accentColor + "22",
+                  borderWidth: 1.5,
+                  borderColor: accentColor + "55",
+                  borderRadius: 2,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Text style={{ fontFamily: "Courier", fontSize: 14, color: accentColor, fontWeight: "bold" }}>
                   {topic.author?.username?.substring(0, 2).toUpperCase() || "??"}
                 </Text>
               </View>
@@ -139,20 +265,32 @@ export default function TopicDetailScreen() {
               </View>
             </View>
             <View className="flex-row items-center gap-2">
-              <TouchableOpacity 
-                onPress={handleFollowAuthor}
-                className="px-3 py-1.5 border border-charcoal rounded-sm"
-              >
-                <Text className="text-charcoal text-xs font-bold" style={{ fontFamily: "Courier" }}>Takip Et</Text>
-              </TouchableOpacity>
+              {/* Kendi yazısı değilse ve takip etmiyorsa butonu göster */}
+              {currentUserId !== topic.authorId && (
+                isFollowing ? (
+                  <View className="px-3 py-1.5 border border-border rounded-sm">
+                    <Text className="text-pencil text-xs" style={{ fontFamily: "Courier" }}>✓ Takip Ediliyor</Text>
+                  </View>
+                ) : (
+                  <TouchableOpacity 
+                    onPress={handleFollowAuthor}
+                    disabled={followLoading}
+                    className="px-3 py-1.5 border border-charcoal rounded-sm"
+                  >
+                    <Text className="text-charcoal text-xs font-bold" style={{ fontFamily: "Courier" }}>
+                      {followLoading ? "..." : "Takip Et"}
+                    </Text>
+                  </TouchableOpacity>
+                )
+              )}
               <TouchableOpacity className="p-2 border border-border rounded-sm">
                 <Flag size={14} color="#9B9B8F" />
               </TouchableOpacity>
             </View>
           </View>
 
-          {/* Title */}
-          <Text className="text-charcoal text-2xl mb-4" style={{ fontFamily: "Courier", lineHeight: 32 }}>
+          {/* Başlık */}
+          <Text style={{ fontFamily: "Courier", fontSize: 22, color: accentColor, lineHeight: 32, marginBottom: 16 }}>
             {topic.title}
           </Text>
 
@@ -170,12 +308,22 @@ export default function TopicDetailScreen() {
 
           {/* Interaction Row */}
           <View className="flex-row items-center gap-4 py-4 border-y border-dashed border-border mb-6">
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => handleVoteTopic(1)}
-              className="flex-row items-center gap-2 px-4 py-2 bg-paper border border-pencil rounded-sm"
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 8,
+                paddingHorizontal: 16,
+                paddingVertical: 8,
+                borderWidth: 1.5,
+                borderColor: accentColor,
+                borderRadius: 2,
+                backgroundColor: accentColor + "11",
+              }}
             >
-              <ThumbsUp size={16} color="#8B9B7A" />
-              <Text className="text-charcoal font-bold" style={{ fontFamily: "Courier" }}>
+              <ThumbsUp size={16} color={accentColor} />
+              <Text style={{ fontFamily: "Courier", fontSize: 14, color: accentColor, fontWeight: "bold" }}>
                 {topic.votes?.length || 0}
               </Text>
             </TouchableOpacity>
@@ -201,41 +349,101 @@ export default function TopicDetailScreen() {
             </Text>
           </View>
 
-          {topic.comments && topic.comments.length > 0 ? (
+          {nestedComments.length > 0 ? (
             <View className="space-y-4">
-              {topic.comments.map((reply: any, index: number) => (
-                <View 
-                  key={reply.id} 
-                  className="bg-paper p-5 border border-border rounded-sm mt-4"
-                  style={{ borderLeftWidth: 3, borderLeftColor: "#E85D4E", shadowColor: "#000", shadowOffset: { width: 2, height: 2 }, shadowOpacity: 0.1, shadowRadius: 0 }}
-                >
-                  <View className="flex-row items-center mb-3">
-                    <View className="w-8 h-8 bg-border items-center justify-center rounded-sm">
-                      <Text className="text-charcoal text-xs" style={{ fontFamily: "Courier" }}>
-                        {reply.author?.username?.substring(0, 2).toUpperCase() || "??"}
-                      </Text>
+              {nestedComments.map((reply: any) => (
+                <View key={reply.id} className="mb-4">
+                  {/* Parent Comment */}
+                  <View
+                    style={{
+                      backgroundColor: "#FFFEF5",
+                      padding: 20,
+                      borderWidth: 1,
+                      borderColor: "#D4D2C8",
+                      borderLeftWidth: 3,
+                      borderLeftColor: accentColor,
+                      borderRadius: 2,
+                      shadowColor: "#000",
+                      shadowOffset: { width: 2, height: 2 },
+                      shadowOpacity: 0.08,
+                      shadowRadius: 0,
+                    }}
+                  >
+                    <View className="flex-row items-center mb-3">
+                      <View className="w-8 h-8 bg-border items-center justify-center rounded-sm">
+                        <Text className="text-charcoal text-xs" style={{ fontFamily: "Courier" }}>
+                          {reply.author?.username?.substring(0, 2).toUpperCase() || "??"}
+                        </Text>
+                      </View>
+                      <View className="ml-3">
+                        <Text className="text-charcoal text-sm" style={{ fontFamily: "Courier" }}>{reply.author?.username || "Anonim"}</Text>
+                        <Text className="text-pencil text-xs" style={{ fontFamily: "System" }}>
+                          {new Date(reply.createdAt).toLocaleDateString()}
+                        </Text>
+                      </View>
                     </View>
-                    <View className="ml-3">
-                      <Text className="text-charcoal text-sm" style={{ fontFamily: "Courier" }}>{reply.author?.username || "Anonim"}</Text>
-                      <Text className="text-pencil text-xs" style={{ fontFamily: "System" }}>
-                        {new Date(reply.createdAt).toLocaleDateString()}
-                      </Text>
+
+                    <Text className="text-charcoal text-sm mb-4" style={{ fontFamily: "System", lineHeight: 22 }}>
+                      {reply.content}
+                    </Text>
+
+                    <View className="flex-row items-center gap-4">
+                      <TouchableOpacity 
+                        onPress={() => handleVoteComment(reply.id, 1)}
+                        className="flex-row items-center px-3 py-1.5 border border-border rounded-sm"
+                      >
+                        <ThumbsUp size={12} color="#6B6B5F" />
+                        <Text className="text-pencil text-xs ml-1" style={{ fontFamily: "Courier" }}>
+                          {reply.votes?.length || 0}
+                        </Text>
+                      </TouchableOpacity>
+                      
+                      <TouchableOpacity 
+                        onPress={() => {
+                          setReplyToId(reply.id);
+                          setReplyToUser(reply.author?.username);
+                        }}
+                        className="flex-row items-center gap-1"
+                      >
+                        <MessageSquare size={14} color="#6B6B5F" />
+                        <Text className="text-pencil text-xs" style={{ fontFamily: "Courier" }}>Yanıtla</Text>
+                      </TouchableOpacity>
                     </View>
                   </View>
 
-                  <Text className="text-charcoal text-sm mb-4" style={{ fontFamily: "System", lineHeight: 22 }}>
-                    {reply.content}
-                  </Text>
-
-                  <TouchableOpacity 
-                    onPress={() => handleVoteComment(reply.id, 1)}
-                    className="flex-row items-center self-start px-3 py-1.5 border border-border rounded-sm"
-                  >
-                    <ThumbsUp size={12} color="#6B6B5F" />
-                    <Text className="text-pencil text-xs ml-1" style={{ fontFamily: "Courier" }}>
-                      {reply.votes?.length || 0}
-                    </Text>
-                  </TouchableOpacity>
+                  {/* Nested Replies */}
+                  {reply.replies && reply.replies.length > 0 && (
+                    <View className="ml-6 mt-2 space-y-3">
+                      {reply.replies.map((nested: any) => (
+                        <View 
+                          key={nested.id}
+                          className="bg-[#FAFAF5] p-4 border border-border rounded-sm"
+                          style={{ borderLeftWidth: 3, borderLeftColor: "#E85D4E" }}
+                        >
+                          <View className="flex-row items-center mb-2">
+                            <Text className="text-charcoal text-xs font-bold" style={{ fontFamily: "Courier" }}>
+                              {nested.author?.username || "Anonim"}
+                            </Text>
+                            <Text className="text-pencil text-[10px] ml-2" style={{ fontFamily: "System" }}>
+                              {new Date(nested.createdAt).toLocaleDateString()}
+                            </Text>
+                          </View>
+                          <Text className="text-charcoal text-xs mb-3" style={{ fontFamily: "System", lineHeight: 18 }}>
+                            {nested.content}
+                          </Text>
+                          <TouchableOpacity 
+                            onPress={() => handleVoteComment(nested.id, 1)}
+                            className="flex-row items-center self-start"
+                          >
+                            <ThumbsUp size={10} color="#6B6B5F" />
+                            <Text className="text-pencil text-[10px] ml-1" style={{ fontFamily: "Courier" }}>
+                              {nested.votes?.length || 0}
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
+                      ))}
+                    </View>
+                  )}
                 </View>
               ))}
             </View>
@@ -251,7 +459,16 @@ export default function TopicDetailScreen() {
           className="bg-paper p-6 border-2 border-pencil rounded-sm mb-4"
           style={{ shadowColor: "#000", shadowOffset: { width: 3, height: 3 }, shadowOpacity: 0.15, shadowRadius: 0 }}
         >
-          <Text className="text-charcoal text-lg mb-4" style={{ fontFamily: "Courier" }}>Yanıt Yaz</Text>
+          <View className="flex-row justify-between items-center mb-4">
+            <Text className="text-charcoal text-lg" style={{ fontFamily: "Courier" }}>
+              {replyToId ? `${replyToUser} kullanıcısına yanıt ver` : "Yanıt Yaz"}
+            </Text>
+            {replyToId && (
+              <TouchableOpacity onPress={() => { setReplyToId(null); setReplyToUser(null); }}>
+                <Text className="text-crimson text-xs underline" style={{ fontFamily: "System" }}>İptal</Text>
+              </TouchableOpacity>
+            )}
+          </View>
           
           <TextInput
             multiline
