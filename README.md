@@ -1,175 +1,178 @@
 <div align="center">
   <br />
-  <img src="https://img.shields.io/badge/TART-Eleştiri%20Platformu-2C2C28?style=for-the-badge" alt="TART" />
+  <img src="https://img.shields.io/badge/TART-Ele%C5%9Ftiri%20Toplulu%C4%9Fu-2C2C28?style=for-the-badge&logo=react&logoColor=61DAFB" alt="TART" />
   <br /><br />
 
-  <p><strong>Fikirlerin dengeli biçimde tartışıldığı, eleştirinin gelişime dönüştüğü modern bir topluluk platformu.</strong></p>
+  <p><strong>Fikirlerin dengeli biçimde tartışıldığı, eleştirinin gelişime dönüştüğü modern, çapraz platformlu (Web + Mobil) bir topluluk platformu.</strong></p>
 
   <br />
 
-  ![React](https://img.shields.io/badge/React_18-20232A?style=flat-square&logo=react&logoColor=61DAFB)
+  ![React](https://img.shields.io/badge/React_19-20232A?style=flat-square&logo=react&logoColor=61DAFB)
+  ![React Native / Expo](https://img.shields.io/badge/React_Native-Expo_54-000000?style=flat-square&logo=expo&logoColor=white)
   ![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=flat-square&logo=typescript&logoColor=white)
   ![Node.js](https://img.shields.io/badge/Node.js-43853D?style=flat-square&logo=node.js&logoColor=white)
-  ![Express](https://img.shields.io/badge/Express-404D59?style=flat-square&logo=express)
+  ![Express](https://img.shields.io/badge/Express-404D59?style=flat-square&logo=express&logoColor=white)
   ![Prisma](https://img.shields.io/badge/Prisma-3982CE?style=flat-square&logo=Prisma&logoColor=white)
   ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=flat-square&logo=postgresql&logoColor=white)
-  ![Vite](https://img.shields.io/badge/Vite-B73BFE?style=flat-square&logo=vite&logoColor=FFD62E)
+  ![Supabase Security](https://img.shields.io/badge/Supabase_RLS-Active-3ECF8E?style=flat-square&logo=supabase&logoColor=white)
 
   <br /><br />
 
-  [Özellikler](#-özellikler) • [Kurulum](#-kurulum) • [Mimari](#-mimari) • [API](#-api-uçları) • [Yol Haritası](#-yol-haritası)
+  [Ana Özellikler](#-ana-özellikler) • [Güvenlik & RLS](#-güvenlik--rls-katmanı) • [Kurulum Kılavuzu](#-kurulum-kılavuzu) • [Mimari Yapı](#-mimari-yapı) • [API Uçları](#-api-uçları) • [Geliştirme Yol Haritası](#-geliştirme-yol-haritası)
 
   <br />
-
 </div>
 
 ---
 
-## ✨ Özellikler
+## ✨ Ana Özellikler
 
-- 🔐 **Güvenli Auth Sistemi** — JWT + Bcrypt ile kayıt, girin ve oturum yönetimi
-- 💬 **Tartışma Platformu** — Konu oluşturma, yorum yapma ve fikir paylaşma
-- 📱 **Tam Responsive** — Tüm cihazlarda kusursuz deneyim
-- 🛡️ **Güvenli Altyapı** — Helmet, CORS ve merkezi hata yönetimi
-- ⚡ **Modern Stack** — Prisma ORM ile tip güvenli veritabanı sorguları
-- 🎨 **Özgün Tasarım** — Defter estetiğinden ilham alan, minimalist ve şık UI
+TART, modern bir topluluk platformunun sahip olması gereken tüm özellikleri hem web hem de mobil (çapraz platform) cihazlarda en üst düzey performansla sunar:
+
+*   🔐 **Güvenli Kimlik Doğrulama:** JWT (JSON Web Token) ve Bcryptjs tabanlı güvenli kayıt/giriş mekanizması. Şifre sıfırlama (Forgot/Reset Password) ve e-posta entegrasyonu.
+*   💬 **Dinamik Yorum ve Tartışmalar:** Konu açma, yorum yapma, yorumlara alt yanıtlar (nested replies) ekleme ve etkileşimi artırıcı oylama (Upvote/Downvote) sistemi.
+*   👥 **Sosyal Ağ Özellikleri:** Gelişmiş kullanıcı takip mekanizması (Follower/Following), kişiselleştirilmiş profil modal ve görünümleri, dinamik "Önerilen Kullanıcılar" algoritması.
+*   🔔 **Dinamik Bildirim Sistemi:** Yeni bir yorum yapıldığında veya gönderi oy aldığında anlık tetiklenen kullanıcı içi bildirimler.
+*   🎨 **Özgün "Defter" Estetiği:** Hem web hem de mobil uygulamada tutarlı "Paper/Notebook" tasarım dili, minimal renk aksanları ve göz alıcı Framer Motion animasyonları.
+*   🛡️ **Sıkılaştırılmış Güvenlik (Hardened Security):** Helmet, CORS, Morgan ve Supabase Row Level Security (RLS) katmanıyla korunan altyapı.
 
 ---
 
-## 🚀 Kurulum
+## 🛡️ Güvenlik & RLS Katmanı
 
-### Gereksinimler
+TART, istemci güvenliğini veritabanı düzeyine taşımaktadır. Supabase PostgreSQL üzerinde **Row Level Security (RLS)** ve **Column-Level Security (CLS)** aktif edilmiştir:
 
-- Node.js `v20+`
-- Bir PostgreSQL veritabanı (Supabase önerilir)
+1.  **Sütun Düzeyli Erişim Sınırlama (CLS):** `users` tablosundaki `password`, `reset_password_token` ve `reset_password_expire` alanları dışarıdan doğrudan atılan `SELECT` isteklerine tamamen kapatılmıştır. İstemci yalnızca güvenli genel alanları okuyabilir.
+2.  **Satır Düzeyli Kontrol (RLS):**
+    *   Yorumlar ve tartışmalar herkes tarafından okunabilir ancak yalnızca giriş yapmış doğrulanmış kullanıcılar tarafından oluşturulabilir.
+    *   Bir içeriği (tartışma/yorum) yalnızca o içeriğin sahibi (`author_id`) güncelleyebilir veya silebilir.
+    *   Kullanıcı bildirimleri yalnızca bildirimin sahibi olan kullanıcı tarafından görüntülenebilir ve okundu olarak işaretlenebilir.
+    *   İletişim mesajlarını (`contact_messages`) sadece `admin` rolüne sahip kullanıcılar sorgulayabilir.
 
-### Adımlar
+---
 
+## 🚀 Kurulum Kılavuzu
+
+Proje 3 ana katmandan oluşmaktadır: **Sunucu (Backend)**, **Web Arayüzü (Frontend)** ve **Mobil Uygulama (Expo React Native)**.
+
+### Sistem Gereksinimleri
+*   Node.js `v20` veya üzeri
+*   PostgreSQL Veritabanı (Yerel veya Supabase bulut veritabanı önerilir)
+
+### Adım 1: Depoyu Klonlayın ve Bağımlılıkları Kurun
 ```bash
-# 1. Repoyu klonla
+# Projeyi bilgisayarınıza indirin
 git clone https://github.com/fatmanurkaragozz/TART.git
 cd TART-project
 
-# 2. Bağımlılıkları yükle
+# Kök dizindeki ve web arayüzündeki ortak paketleri kurun
+npm install
+```
+
+### Adım 2: Çevre Değişkenlerini Yapılandırın
+Kök dizinde yer alan şablonu kopyalayarak gerçek veritabanı ve e-posta kimlik bilgilerinizi girin:
+```bash
+cp .env.example .env
+```
+`.env` dosyasını bir kod editörüyle açın ve veritabanı adreslerinizi (`DATABASE_URL`, `DIRECT_URL`), JWT anahtarınızı (`JWT_SECRET`) ve mail gönderimi için SMTP bilgilerinizi tanımlayın.
+
+### Adım 3: Veritabanı Şemasını ve Tabloları Oluşturun
+Prisma ORM kullanarak tabloları oluşturun ve veritabanınızı güncelleyin:
+```bash
+npx prisma generate
+npx prisma migrate dev
+```
+
+### Adım 4: Uygulamaları Başlatın
+
+#### A. Sunucu & Web Frontend Çalıştırma (Kök Dizinde)
+```bash
+# Backend Sunucusunu Başlat (http://localhost:5000)
+npm run server
+
+# Web Arayüzünü Başlat (Vite - http://localhost:5173)
+npm run dev
+```
+
+#### B. Mobil Uygulamayı Çalıştırma (Expo - `mobile` Dizini)
+Mobil uygulamayı çalıştırmak için yeni bir terminal penceresinde `mobile` dizinine geçin:
+```bash
+cd mobile
 npm install
 
-# 3. Ortam değişkenlerini yapılandır
-cp .env.example .env
-# .env dosyasını kendi bilgilerinle düzenle
-
-# 4. Veritabanı şemasını oluştur
-npx prisma migrate dev
-
-# 5. Geliştirme sunucularını başlat
-npm run server   # Backend → http://localhost:5000
-npm run dev      # Frontend → http://localhost:5173
+# Expo Geliştirme Sunucusunu Başlat
+npm run start
 ```
-
-### Ortam Değişkenleri (`.env`)
-
-```env
-# Supabase — Transaction Pooler (Uygulama için)
-DATABASE_URL="postgresql://USER:PASSWORD@HOST:6543/postgres?pgbouncer=true"
-
-# Supabase — Direct Connection (Migration için)
-DIRECT_URL="postgresql://USER:PASSWORD@HOST:5432/postgres"
-
-# Uygulama
-PORT=5000
-NODE_ENV=development
-CLIENT_URL=http://localhost:5173
-VITE_API_BASE_URL=http://localhost:5000/api/v1
-
-# JWT
-JWT_SECRET=your_super_secret_key_here
-JWT_EXPIRE=30d
-```
-
-> [!NOTE]
-> Supabase bağlantı bilgilerine Supabase Dashboard → Settings → Database → Connection String bölümünden ulaşabilirsiniz.
+*   **Android için:** Klavyeden `a` tuşuna basın (Android Emulator veya fiziksel cihaz bağlı olmalıdır).
+*   **iOS için:** Klavyeden `i` tuşuna basın (macOS ve Xcode gerektirir).
+*   **QR Code ile:** Telefonunuza **Expo Go** uygulamasını yükleyerek ekranda çıkan QR kodu taratarak kendi telefonunuzda anında çalıştırabilirsiniz.
 
 ---
 
-## 🏗️ Mimari
+## 🏗️ Mimari Yapı
 
-TART backend'i profesyonel **Katmanlı Mimari (Layered Architecture)** desenini uygular:
+TART Backend'i, endüstri standardı **Katmanlı Mimari (Layered Architecture)** deseniyle geliştirilmiştir:
 
 ```
 TART-project/
+├── 📁 prisma/                 # Prisma Şemaları ve Migrasyonlar
+│   └── schema.prisma          # Mükemmel tasarlanmış PostgreSQL modelleri
 │
-├── 📁 prisma/
-│   ├── schema.prisma          # User & Discussion modelleri
-│   └── migrations/            # Otomatik migration'lar
+├── 📁 server/                 # Sunucu Katmanı (Node.js & Express)
+│   ├── routes/                # Rota / Uç Nokta Tanımları (API Router)
+│   ├── controllers/           # HTTP İsteklerini Alan ve Yanıtları Yöneten Katman
+│   ├── services/              # Ağır İş Mantığının Yürütüldüğü Servis Katmanı
+│   ├── middleware/            # JWT Kimlik Kontrolleri, Morgan Hata Loglayıcılar
+│   ├── config/                # Veritabanı Bağlantı Başlatıcıları (Prisma Client)
+│   └── utils/                 # Hata Nesneleri (ApiError), Yardımcı Araçlar
 │
-├── 📁 server/                 # Backend
-│   ├── routes/                # HTTP rota tanımları
-│   ├── controllers/           # İstek/cevap yönetimi
-│   ├── services/              # İş mantığı (AuthService vb.)
-│   ├── repositories/          # Veritabanı katmanı (Prisma)
-│   ├── middleware/            # Auth guard, hata yönetimi
-│   ├── config/                # Prisma Client singleton
-│   └── utils/                 # Yardımcılar (ApiError vb.)
+├── 📁 src/                    # Web Arayüzü (React 19 + Vite 6 + TS)
+│   ├── app/
+│   │   ├── pages/             # Login, Register, Home, Contact, Profile...
+│   │   └── components/        # Yeniden Kullanılabilir Premium UI Öğeleri
+│   ├── services/              # Axios Tabanlı İstemci API Servisleri
+│   └── lib/                   # Otomatik JWT Ekleme Yapan Interceptor Mekanizması
 │
-└── 📁 src/                    # Frontend — React + TypeScript
-    ├── app/
-    │   ├── pages/             # Login, Register, Home, Profile…
-    │   └── components/        # Paylaşılan UI bileşenleri
-    ├── services/              # API servis katmanı (authService)
-    └── lib/                   # Axios instance (JWT interceptor)
+└── 📁 mobile/                 # Mobil Arayüz (React Native + Expo Router + NativeWind)
+    ├── app/                   # Expo Router Tabanlı Rotalar ve Sekmeler
+    ├── src/
+    │   ├── services/          # Mobil-Özel API Servis Katmanı
+    │   └── components/        # Mobil Ekran Bileşenleri
+    └── assets/                # Medya ve Tasarım Asetleri
 ```
-
-**Veri akışı:** `Route → Controller → Service → Repository → Prisma → PostgreSQL`
 
 ---
 
 ## 📡 API Uçları
 
-| Method | Endpoint | Açıklama | Auth |
+| Metot | Endpoint / Uç Nokta | Açıklama | Yetki / Giriş |
 |:---:|---|---|:---:|
-| `POST` | `/api/v1/auth/register` | Yeni kullanıcı kaydı | ❌ |
-| `POST` | `/api/v1/auth/login` | Giriş yap, JWT döner | ❌ |
-| `GET` | `/api/v1/discussions` | Tüm tartışmaları listele | ❌ |
-| `POST` | `/api/v1/discussions` | Yeni tartışma oluştur | ✅ |
-| `GET` | `/api/v1/discussions/:id` | Tartışma detayını getir | ❌ |
+| `POST` | `/api/v1/auth/register` | Yeni Kullanıcı Kaydı | Herkese Açık |
+| `POST` | `/api/v1/auth/login` | Kullanıcı Girişi (JWT Döner) | Herkese Açık |
+| `POST` | `/api/v1/auth/forgot-password` | Şifre Sıfırlama E-postası Gönder | Herkese Açık |
+| `POST` | `/api/v1/auth/reset-password` | Yeni Şifreyi Kaydet | Herkese Açık |
+| `GET` | `/api/v1/discussions` | Tüm Tartışmaları Listele | Herkese Açık |
+| `POST` | `/api/v1/discussions` | Yeni Tartışma Oluştur | Giriş Gerekli |
+| `GET` | `/api/v1/discussions/:id` | Tartışma Detayı ve Yorumları Getir | Herkese Açık |
+| `PUT` | `/api/v1/discussions/:id` | Tartışmayı Güncelle (Yalnızca Yazar/Admin) | Giriş Gerekli |
+| `POST` | `/api/v1/comments` | Tartışmaya Yorum Gönder | Giriş Gerekli |
+| `POST` | `/api/v1/discussions/:id/vote` | Tartışmayı Oyla (Upvote/Downvote) | Giriş Gerekli |
 
 ---
 
-## 🗺️ Yol Haritası
+## 🗺️ Geliştirme Yol Haritası
 
-```
-✅ Hafta 1  — UI/UX Tasarımı ve tüm sayfaların oluşturulması
-✅ Hafta 2  — Backend kurulumu ve Katmanlı Mimari
-✅ Hafta 3  — Prisma ORM geçişi + JWT kimlik doğrulama
-⬜ Hafta 4  — Tartışma ve yorum yönetimi (Core özellikler)
-⬜ Hafta 5  — Arama ve filtreleme sistemi
-⬜ Hafta 6  — Bildirim sistemi
-⬜ Hafta 7  — Profil ve ayarlar geliştirmeleri
-⬜ Hafta 8  — Performans optimizasyonu
-⬜ Hafta 9  — Güvenlik sertleştirme
-⬜ Hafta 10 — Test yazımı (unit & integration)
-⬜ Hafta 11 — Deployment ve CI/CD
-⬜ Hafta 12 — Final ve dokümantasyon
-```
+Proje, 12 haftalık planlanan hedeflerinin ötesine geçerek tüm kritik ve ileri düzey özellikleri başarıyla tamamlamıştır:
 
----
-
-## 🧱 Kullanılan Teknolojiler
-
-| Katman | Teknoloji |
-|---|---|
-| **UI** | React 18, TypeScript, Tailwind CSS v4, Framer Motion |
-| **Routing** | React Router v7 |
-| **HTTP** | Axios (JWT interceptor ile) |
-| **Bildirimler** | Sonner (Toast) |
-| **Backend** | Node.js, Express v5 |
-| **ORM** | Prisma (type-safe PostgreSQL sorguları) |
-| **Veritabanı** | PostgreSQL (Supabase hosted) |
-| **Auth** | JWT (jsonwebtoken) + bcryptjs |
-| **Güvenlik** | Helmet, CORS, Morgan |
-| **Build** | Vite 6 |
+*   [x] **Aşama 1 (Hafta 1-3):** Mimarinin Kurulması, UI Tasarımı ve JWT Kimlik Doğrulama
+*   [x] **Aşama 2 (Hafta 4-5):** Tartışma, Detaylı Yorum, Alt Yorum Yanıtları ve Oylama Sistemleri
+*   [x] **Aşama 3 (Hafta 6-7):** Takip Sistemi, Profil Sayfaları, E-posta Entegrasyonu ve Mobil-Web Veri Eşitlemesi
+*   [x] **Aşama 4 (Hafta 8-9):** Supabase RLS Güvenlik Sertleştirmesi ve Veritabanı İndeksleme Optimizasyonları (Hız Artırımı)
+*   [x] **Aşama 5 (Hafta 10-11):** Mobil UI/UX Uyumlaştırması (Expo Go + NativeWind), Azure CI/CD Pipeline Yapılandırması
+*   [x] **Aşama 6 (Hafta 12):** Açık Kaynak Dağıtımı ve Dokümantasyon (.env.example ile Güvenli Dağıtım)
 
 ---
 
 <div align="center">
-  <sub>Made with ☕ and genuine criticism · <strong>TART © 2026</strong></sub>
+  <sub>Made with ☕, passion and genuine criticism · <strong>TART © 2026</strong></sub>
 </div>
