@@ -49,8 +49,17 @@ export default function Home() {
   };
 
   useEffect(() => {
-    fetchSideData();
-    fetchNotificationStatus();
+    const checkAuth = async () => {
+      const token = await authService.getToken();
+      if (!token) {
+        navigate("/");
+        return;
+      }
+      fetchSideData();
+      fetchNotificationStatus();
+    };
+
+    checkAuth();
   }, []);
 
   useEffect(() => {

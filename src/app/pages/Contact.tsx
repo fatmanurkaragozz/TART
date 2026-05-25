@@ -1,5 +1,5 @@
 import { motion } from "motion/react";
-import { ArrowLeft, Send, Mail, MessageSquare } from "lucide-react";
+import { ArrowLeft, Send, Mail, MessageSquare, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { DevNav } from "../components/DevNav";
@@ -16,21 +16,20 @@ export default function Contact() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
   useEffect(() => {
     const userJson = localStorage.getItem("user");
-    if (!userJson) {
-      toast.error("İletişime geçebilmek için önce giriş yapmalısınız.");
-      navigate("/login");
-      return;
+    if (userJson) {
+      setIsLoggedIn(true);
+      const user = JSON.parse(userJson);
+      setFormData(prev => ({
+        ...prev,
+        name: user.fullName || user.username,
+        email: user.email
+      }));
     }
-
-    const user = JSON.parse(userJson);
-    setFormData(prev => ({
-      ...prev,
-      name: user.fullName || user.username,
-      email: user.email
-    }));
-  }, [navigate]);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -103,66 +102,84 @@ export default function Contact() {
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid md:grid-cols-2 gap-6">
+          {!isLoggedIn ? (
+            <div 
+              className="p-8 text-center rounded-sm border-2 border-dashed border-[#D4D2C8] bg-[#F5F5F0]/50"
+            >
+              <Users className="w-10 h-10 mx-auto mb-4" style={{ color: "#6B6B5F" }} />
+              <h3 className="typewriter text-lg mb-2" style={{ color: "#2C2C28" }}>Giriş Yapmalısınız</h3>
+              <p className="handwritten mb-6" style={{ color: "#6B6B5F" }}>
+                Mesaj gönderebilmek için lütfen giriş yapın veya kayıt olun.
+              </p>
+              <button
+                onClick={() => navigate("/login")}
+                className="px-8 py-3 bg-[#2C2C28] text-[#F5F5F0] typewriter rounded-sm shadow-sm hover:scale-[1.02] transition-transform"
+              >
+                Giriş Yap veya Kayıt Ol
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-xs typewriter mb-2" style={{ color: "#6B6B5F" }}>Adınız Soyadınız</label>
+                  <input
+                    type="text"
+                    required
+                    readOnly
+                    value={formData.name}
+                    className="w-full p-3 handwritten border-b-2 border-[#D4D2C8] outline-none bg-transparent opacity-70 cursor-not-allowed"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs typewriter mb-2" style={{ color: "#6B6B5F" }}>E-posta Adresiniz</label>
+                  <input
+                    type="email"
+                    required
+                    readOnly
+                    value={formData.email}
+                    className="w-full p-3 handwritten border-b-2 border-[#D4D2C8] outline-none bg-transparent opacity-70 cursor-not-allowed"
+                  />
+                </div>
+              </div>
+
               <div>
-                <label className="block text-xs typewriter mb-2" style={{ color: "#6B6B5F" }}>Adınız Soyadınız</label>
+                <label className="block text-xs typewriter mb-2" style={{ color: "#6B6B5F" }}>Konu</label>
                 <input
                   type="text"
                   required
-                  readOnly
-                  value={formData.name}
-                  className="w-full p-3 handwritten border-b-2 border-[#D4D2C8] outline-none bg-transparent opacity-70 cursor-not-allowed"
+                  value={formData.subject}
+                  onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+                  className="w-full p-3 handwritten border-b-2 border-[#D4D2C8] focus:border-[#2C2C28] outline-none bg-transparent"
+                  placeholder="Nasıl yardımcı olabiliriz?"
                 />
               </div>
+
               <div>
-                <label className="block text-xs typewriter mb-2" style={{ color: "#6B6B5F" }}>E-posta Adresiniz</label>
-                <input
-                  type="email"
+                <label className="block text-xs typewriter mb-2" style={{ color: "#6B6B5F" }}>Mesajınız</label>
+                <textarea
                   required
-                  readOnly
-                  value={formData.email}
-                  className="w-full p-3 handwritten border-b-2 border-[#D4D2C8] outline-none bg-transparent opacity-70 cursor-not-allowed"
+                  rows={6}
+                  value={formData.message}
+                  onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                  className="w-full p-4 handwritten border-2 border-[#D4D2C8] focus:border-[#2C2C28] outline-none bg-transparent rounded-sm resize-none"
+                  placeholder="Düşüncelerinizi buraya dökün..."
                 />
               </div>
-            </div>
 
-            <div>
-              <label className="block text-xs typewriter mb-2" style={{ color: "#6B6B5F" }}>Konu</label>
-              <input
-                type="text"
-                required
-                value={formData.subject}
-                onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                className="w-full p-3 handwritten border-b-2 border-[#D4D2C8] focus:border-[#2C2C28] outline-none bg-transparent"
-                placeholder="Nasıl yardımcı olabiliriz?"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs typewriter mb-2" style={{ color: "#6B6B5F" }}>Mesajınız</label>
-              <textarea
-                required
-                rows={6}
-                value={formData.message}
-                onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                className="w-full p-4 handwritten border-2 border-[#D4D2C8] focus:border-[#2C2C28] outline-none bg-transparent rounded-sm resize-none"
-                placeholder="Düşüncelerinizi buraya dökün..."
-              />
-            </div>
-
-            <motion.button
-              type="submit"
-              disabled={isSubmitting}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="w-full py-4 bg-[#2C2C28] text-[#F5F5F0] typewriter flex items-center justify-center gap-3 rounded-sm shadow-md transition-all"
-              style={{ fontSize: "1rem" }}
-            >
-              <Send className="w-4 h-4" />
-              {isSubmitting ? "Hazırlanıyor..." : "Mesajı Gönder"}
-            </motion.button>
-          </form>
+              <motion.button
+                type="submit"
+                disabled={isSubmitting}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="w-full py-4 bg-[#2C2C28] text-[#F5F5F0] typewriter flex items-center justify-center gap-3 rounded-sm shadow-md transition-all"
+                style={{ fontSize: "1rem" }}
+              >
+                <Send className="w-4 h-4" />
+                {isSubmitting ? "Hazırlanıyor..." : "Mesajı Gönder"}
+              </motion.button>
+            </form>
+          )}
 
           <div className="mt-12 pt-8 flex flex-col md:flex-row items-center justify-between gap-4" style={{ borderTop: "1px dashed #D4D2C8" }}>
              <div className="flex items-center gap-2">

@@ -51,7 +51,7 @@ export function ErrorBoundary() {
           </button>
           
           <Link 
-            to="/home" 
+            to={localStorage.getItem("token") ? "/home" : "/"} 
             className="flex items-center justify-center gap-2 py-3 typewriter transition-all bg-[#2C2C28] text-white"
             style={{ borderRadius: "2px" }}
           >
