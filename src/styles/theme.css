@@ -2,7 +2,7 @@
 
 :root {
   --font-size: 16px;
-  
+
   /* TART Color System - Paper & Ink Tones */
   --background: #FAFAF5;
   --paper-white: #F5F5F0;
@@ -18,7 +18,7 @@
   --dusty-green: #8B9B7A;
   --text-primary: #2C2C28;
   --text-secondary: #6B6B5F;
-  
+
   /* Existing variables mapped to paper system */
   --foreground: #2C2C28;
   --card: #F5F5F0;

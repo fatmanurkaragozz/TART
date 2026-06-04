@@ -28,7 +28,8 @@ class CommentService {
         // 3. AI Moderasyon Kontrolü (Hafta 5)
         const moderation = await ModerationService.analyzeText(content);
         if (!moderation.isSafe) {
-            throw new ApiError(400, `Yorumunuz topluluk kurallarını ihlal ediyor olabilir (Risk: ${Math.round(moderation.riskScore * 100)}%)`);
+            const reason = moderation.flaggedReason ? ` - Neden: ${moderation.flaggedReason}` : '';
+            throw new ApiError(400, `Yorumunuz topluluk kurallarını ihlal ediyor olabilir (Risk: ${Math.round(moderation.riskScore * 100)}%${reason})`);
         }
 
         // 4. Kaydet
@@ -77,7 +78,8 @@ class CommentService {
         // AI Moderasyon Kontrolü
         const moderation = await ModerationService.analyzeText(content);
         if (!moderation.isSafe) {
-            throw new ApiError(400, 'Düzenlenen yorum topluluk kurallarını ihlal ediyor olabilir.');
+            const reason = moderation.flaggedReason ? ` - Neden: ${moderation.flaggedReason}` : '';
+            throw new ApiError(400, `Düzenlenen yorum topluluk kurallarını ihlal ediyor olabilir${reason}`);
         }
 
         return await CommentRepository.update(id, content.trim());

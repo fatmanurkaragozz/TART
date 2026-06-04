@@ -303,8 +303,8 @@ export default function Home() {
                 return (
                   <div className="flex items-center gap-2">
                     {user.role === 'admin' && (
-                      <a 
-                        href="/admin" 
+                      <a
+                        href="/admin"
                         className="p-2 transition-all hover:bg-paper border border-[#D4D2C8] rounded-sm group"
                         title="Admin Paneli"
                       >
