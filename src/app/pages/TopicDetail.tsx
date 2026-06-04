@@ -1,7 +1,7 @@
 import { motion } from "motion/react";
 import { ArrowLeft, MessageSquare, Heart, Flag, Loader2, Pen, X, Check } from "lucide-react";
-import { useState, useEffect } from "react";
-import { useParams, Link, useNavigate } from "react-router";
+import { useState, useEffect, useRef } from "react";
+import { useParams, Link, useNavigate, useSearchParams } from "react-router";
 import { DevNav } from "../components/DevNav";
 import discussionService from "../../services/discussionService";
 import commentService from "../../services/commentService";
@@ -9,15 +9,281 @@ import { toast } from "sonner";
 
 import { Skeleton } from "../components/Skeleton";
 
+interface CommentNodeProps {
+  comment: any;
+  depth: number;
+  currentUser: any;
+  editingCommentId: string | null;
+  setEditingCommentId: (id: string | null) => void;
+  editCommentContent: string;
+  setEditCommentContent: (text: string) => void;
+  replyToId: string | null;
+  setReplyToId: (id: string | null) => void;
+  replyText: string;
+  setReplyText: (text: string) => void;
+  submitting: boolean;
+  handleVoteComment: (id: string, val: number) => void;
+  handleDeleteComment: (id: string) => void;
+  handleUpdateComment: (id: string) => void;
+  handleSubmitReply: (e: React.FormEvent, parentId: string) => void;
+}
+
+function CommentNode({
+  comment,
+  depth,
+  currentUser,
+  editingCommentId,
+  setEditingCommentId,
+  editCommentContent,
+  setEditCommentContent,
+  replyToId,
+  setReplyToId,
+  replyText,
+  setReplyText,
+  submitting,
+  handleVoteComment,
+  handleDeleteComment,
+  handleUpdateComment,
+  handleSubmitReply
+}: CommentNodeProps) {
+  const hasReplies = comment.replies && comment.replies.length > 0;
+  
+  return (
+    <div className="relative mb-4">
+      {/* Horizontal connector line for replies */}
+      {depth > 0 && (
+        <div
+          className="absolute left-[-24px] top-[24px] w-6 h-0.5"
+          style={{ background: "#D4D2C8", opacity: 0.6 }}
+        />
+      )}
+
+      {/* Comment Body */}
+      <motion.div
+        initial={{ opacity: 0, x: depth === 0 ? -20 : 10 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.3 }}
+        className={depth === 0 ? "p-6 relative z-10" : "p-5"}
+        style={{
+          background: depth === 0 ? "#FFFEF5" : "#FAFAF5",
+          border: depth === 0 ? "1px solid #D4D2C8" : "1px solid rgba(212, 210, 200, 0.8)",
+          borderLeft: depth === 0 ? "4px solid #4A90E2" : "3px solid #E85D4E",
+          borderRadius: "2px",
+          boxShadow: depth === 0 ? "3px 3px 0px rgba(107, 107, 95, 0.1)" : "none",
+        }}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <div className="flex items-center gap-3">
+            {depth === 0 ? (
+              <div
+                className="w-9 h-9 flex items-center justify-center typewriter font-bold"
+                style={{
+                  background: "#E8E6E0",
+                  color: "#2C2C28",
+                  fontSize: "0.8rem",
+                  borderRadius: "2px",
+                  border: "1px solid #D4D2C8"
+                }}
+              >
+                {comment.author?.username?.substring(0, 2).toUpperCase() || "??"}
+              </div>
+            ) : null}
+            <div>
+              <div
+                className="typewriter font-medium"
+                style={{ fontSize: depth === 0 ? "0.9rem" : "0.75rem", color: "#2C2C28" }}
+              >
+                {comment.author?.username || "Anonim"}
+              </div>
+              <div
+                className="text-xs handwritten"
+                style={{ color: "#9B9B8F" }}
+              >
+                {new Date(comment.createdAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' })}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex gap-2">
+            {comment.authorId === currentUser.id && (
+              <button
+                onClick={() => {
+                  setEditingCommentId(editingCommentId === comment.id ? null : comment.id);
+                  setEditCommentContent(comment.content);
+                }}
+                className={`text-[0.65rem] handwritten transition-colors ${editingCommentId === comment.id ? 'text-[#4A90E2]' : 'text-[#9B9B8F] hover:text-[#4A90E2]'}`}
+              >
+                Düzenle
+              </button>
+            )}
+            {(comment.authorId === currentUser.id || currentUser.role === 'admin') && (
+              <button
+                onClick={() => handleDeleteComment(comment.id)}
+                className="text-[0.65rem] handwritten text-[#9B9B8F] hover:text-red-500 transition-colors"
+              >
+                Sil
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Content Section */}
+        {editingCommentId === comment.id ? (
+          <div className="space-y-3 mb-4">
+            <textarea
+              value={editCommentContent}
+              onChange={(e) => setEditCommentContent(e.target.value)}
+              className="w-full p-3 handwritten border border-[#4A90E2] bg-transparent outline-none rounded-sm"
+              rows={depth === 0 ? 3 : 2}
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setEditingCommentId(null)}
+                className="px-3 py-1 text-[10px] typewriter border border-[#D4D2C8]"
+              >
+                Vazgeç
+              </button>
+              <button
+                onClick={() => handleUpdateComment(comment.id)}
+                disabled={submitting}
+                className="px-3 py-1 text-[10px] typewriter bg-[#2C2C28] text-white flex items-center gap-2"
+              >
+                {submitting ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <Check className="w-2.5 h-2.5" />}
+                Kaydet
+              </button>
+            </div>
+          </div>
+        ) : (
+          <p
+            className="mb-4 handwritten"
+            style={{
+              color: "#2C2C28",
+              fontSize: depth === 0 ? "1.05rem" : "0.95rem",
+              lineHeight: 1.7,
+              letterSpacing: "0.01em"
+            }}
+          >
+            {comment.content}
+          </p>
+        )}
+
+        {/* Actions */}
+        <div className="flex items-center gap-4">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => handleVoteComment(comment.id, 1)}
+            className="flex items-center gap-2 px-3 py-1.5 text-xs typewriter"
+            style={{
+              background: "rgba(232, 93, 78, 0.05)",
+              border: "1px solid rgba(232, 93, 78, 0.2)",
+              borderRadius: "2px",
+              color: comment.votes?.length > 0 ? "#E85D4E" : "#9B9B8F",
+            }}
+          >
+            <Heart className="w-3.5 h-3.5" fill={comment.votes?.length > 0 ? "#E85D4E" : "none"} />
+            {comment.votes?.length || 0}
+          </motion.button>
+
+          <button
+            onClick={() => setReplyToId(replyToId === comment.id ? null : comment.id)}
+            className="text-xs typewriter hover:underline flex items-center gap-1"
+            style={{ color: "#6B6B5F" }}
+          >
+            <MessageSquare className="w-3.5 h-3.5" />
+            Yanıtla
+          </button>
+        </div>
+
+        {/* Nested Reply Input */}
+        {replyToId === comment.id && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            className="mt-4 pt-4 border-t border-dashed border-[#D4D2C8]"
+          >
+            <textarea
+              id={`reply-to-${comment.id}`}
+              name={`reply-to-${comment.id}`}
+              value={replyText}
+              onChange={(e) => setReplyText(e.target.value)}
+              placeholder={`${comment.author?.username || 'bu yorum'} kullanıcısına yanıt verin...`}
+              className="w-full p-4 mb-3 handwritten text-sm outline-none border border-[#D4D2C8] bg-[rgba(255,254,245,0.5)] focus:border-[#4A90E2] transition-colors"
+              rows={4}
+            />
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => {
+                  setReplyToId(null);
+                  setReplyText("");
+                }}
+                className="px-5 py-2 text-xs typewriter border border-[#D4D2C8] rounded-[2px]"
+              >
+                Vazgeç
+              </button>
+              <button
+                onClick={(e) => handleSubmitReply(e, comment.id)}
+                disabled={submitting}
+                className="px-5 py-2 text-xs typewriter bg-[#2C2C28] text-white rounded-[2px] shadow-md"
+              >
+                Yanıtı Gönder
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </motion.div>
+
+      {/* Recursive replies rendering with vertical line */}
+      {hasReplies && (
+        <div className="mt-2 ml-6 pl-6 relative">
+          {/* Vertical connection line */}
+          <div
+            className="absolute left-0 top-0 bottom-4 w-0.5"
+            style={{ background: "#D4D2C8", opacity: 0.6 }}
+          />
+
+          <div className="space-y-4">
+            {comment.replies.map((child: any) => (
+              <CommentNode
+                key={child.id}
+                comment={child}
+                depth={depth + 1}
+                currentUser={currentUser}
+                editingCommentId={editingCommentId}
+                setEditingCommentId={setEditingCommentId}
+                editCommentContent={editCommentContent}
+                setEditCommentContent={setEditCommentContent}
+                replyToId={replyToId}
+                setReplyToId={setReplyToId}
+                replyText={replyText}
+                setReplyText={setReplyText}
+                submitting={submitting}
+                handleVoteComment={handleVoteComment}
+                handleDeleteComment={handleDeleteComment}
+                handleUpdateComment={handleUpdateComment}
+                handleSubmitReply={handleSubmitReply}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function TopicDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const joinParam = searchParams.get("join");
+  const replyInputRef = useRef<HTMLTextAreaElement>(null);
   const [topic, setTopic] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [replyText, setReplyText] = useState("");
   const [replyToId, setReplyToId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  
+
   // Editing Topic States
   const [isEditingTopic, setIsEditingTopic] = useState(false);
   const [editTopicTitle, setEditTopicTitle] = useState("");
@@ -34,6 +300,18 @@ export default function TopicDetail() {
       fetchTopicDetails();
     }
   }, [id]);
+
+  useEffect(() => {
+    if (!loading && topic && joinParam === "true") {
+      const timer = setTimeout(() => {
+        if (replyInputRef.current) {
+          replyInputRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+          replyInputRef.current.focus();
+        }
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [loading, topic, joinParam]);
 
   const fetchTopicDetails = async () => {
     try {
@@ -349,13 +627,13 @@ export default function TopicDetail() {
                 rows={8}
               />
               <div className="flex justify-end gap-2">
-                <button 
+                <button
                   onClick={() => setIsEditingTopic(false)}
                   className="px-4 py-2 text-xs typewriter border border-[#D4D2C8]"
                 >
                   İptal
                 </button>
-                <button 
+                <button
                   onClick={handleUpdateTopic}
                   disabled={submitting}
                   className="px-4 py-2 text-xs typewriter bg-[#2C2C28] text-white flex items-center gap-2"
@@ -470,293 +748,26 @@ export default function TopicDetail() {
 
           <div className="space-y-4">
             {topic.nestedComments && topic.nestedComments.length > 0 ? (
-              topic.nestedComments.map((reply: any, index: number) => (
-                <div key={reply.id} className="relative mb-6">
-                  {/* Ana Yorum */}
-                  <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.3, delay: 0.3 + index * 0.05 }}
-                    className="p-6 relative z-10"
-                    style={{
-                      background: "#FFFEF5",
-                      border: "1px solid #D4D2C8",
-                      borderLeft: "4px solid #4A90E2", // Ana yorumlar mavi çizgiyle başlar
-                      borderRadius: "2px",
-                      boxShadow: "3px 3px 0px rgba(107, 107, 95, 0.1)",
-                    }}
-                  >
-                    {/* Header */}
-                    <div className="flex items-center justify-between gap-3 mb-4">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="w-9 h-9 flex items-center justify-center typewriter font-bold"
-                          style={{
-                            background: "#E8E6E0",
-                            color: "#2C2C28",
-                            fontSize: "0.8rem",
-                            borderRadius: "2px",
-                            border: "1px solid #D4D2C8"
-                          }}
-                        >
-                          {reply.author?.username?.substring(0, 2).toUpperCase() || "??"}
-                        </div>
-                        <div>
-                          <div
-                            className="typewriter font-medium"
-                            style={{ fontSize: "0.9rem", color: "#2C2C28" }}
-                          >
-                            {reply.author?.username || "Anonim"}
-                          </div>
-                          <div
-                            className="text-xs handwritten"
-                            style={{ color: "#9B9B8F" }}
-                          >
-                            {new Date(reply.createdAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' })}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex gap-2">
-                        {reply.authorId === currentUser.id && (
-                          <button
-                            onClick={() => {
-                              setEditingCommentId(editingCommentId === reply.id ? null : reply.id);
-                              setEditCommentContent(reply.content);
-                            }}
-                            className={`text-xs handwritten transition-colors ${editingCommentId === reply.id ? 'text-[#4A90E2]' : 'text-[#9B9B8F] hover:text-[#4A90E2]'}`}
-                          >
-                            Düzenle
-                          </button>
-                        )}
-                        {(reply.authorId === currentUser.id || currentUser.role === 'admin') && (
-                          <button
-                            onClick={() => handleDeleteComment(reply.id)}
-                            className="text-xs handwritten hover:text-red-500 transition-colors opacity-60 hover:opacity-100"
-                          >
-                            Sil
-                          </button>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Content Section */}
-                    {editingCommentId === reply.id ? (
-                      <div className="space-y-3 mb-4">
-                        <textarea
-                          value={editCommentContent}
-                          onChange={(e) => setEditCommentContent(e.target.value)}
-                          className="w-full p-3 handwritten border border-[#4A90E2] bg-transparent outline-none rounded-sm"
-                          rows={3}
-                        />
-                        <div className="flex justify-end gap-2">
-                          <button 
-                            onClick={() => setEditingCommentId(null)}
-                            className="px-3 py-1 text-[10px] typewriter border border-[#D4D2C8]"
-                          >
-                            Vazgeç
-                          </button>
-                          <button 
-                            onClick={() => handleUpdateComment(reply.id)}
-                            disabled={submitting}
-                            className="px-3 py-1 text-[10px] typewriter bg-[#2C2C28] text-white flex items-center gap-2"
-                          >
-                            {submitting ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <Check className="w-2.5 h-2.5" />}
-                            Kaydet
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <p
-                        className="mb-4 handwritten"
-                        style={{
-                          color: "#2C2C28",
-                          fontSize: "1.05rem",
-                          lineHeight: 1.7,
-                          letterSpacing: "0.01em"
-                        }}
-                      >
-                        {reply.content}
-                      </p>
-                    )}
-
-                    <div className="flex items-center gap-4">
-                      <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => handleVoteComment(reply.id, 1)}
-                        className="flex items-center gap-2 px-3 py-1.5 text-xs typewriter"
-                        style={{
-                          background: "rgba(232, 93, 78, 0.05)",
-                          border: "1px solid rgba(232, 93, 78, 0.2)",
-                          borderRadius: "2px",
-                          color: "#E85D4E",
-                        }}
-                      >
-                        <Heart className="w-3.5 h-3.5" fill={reply.votes?.length > 0 ? "#E85D4E" : "none"} />
-                        {reply.votes?.length || 0}
-                      </motion.button>
-
-                      <button
-                        onClick={() => setReplyToId(replyToId === reply.id ? null : reply.id)}
-                        className="text-xs typewriter hover:underline flex items-center gap-1"
-                        style={{ color: "#6B6B5F" }}
-                      >
-                        <MessageSquare className="w-3.5 h-3.5" />
-                        Yanıtla
-                      </button>
-                    </div>
-
-                    {/* Nested Reply Input */}
-                    {replyToId === reply.id && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        className="mt-4 pt-4 border-t border-dashed border-[#D4D2C8]"
-                      >
-                        <textarea
-                          id={`reply-to-${reply.id}`}
-                          name={`reply-to-${reply.id}`}
-                          value={replyText}
-                          onChange={(e) => setReplyText(e.target.value)}
-                          placeholder="Fikrinizi buraya yazın..."
-                          className="w-full p-4 mb-3 handwritten text-sm outline-none border border-[#D4D2C8] bg-[rgba(255,254,245,0.5)] focus:border-[#4A90E2] transition-colors"
-                          rows={4}
-                        />
-                        <div className="flex gap-2 justify-end">
-                          <button
-                            onClick={() => {
-                              setReplyToId(null);
-                              setReplyText("");
-                            }}
-                            className="px-5 py-2 text-xs typewriter border border-[#D4D2C8] rounded-[2px]"
-                          >
-                            Vazgeç
-                          </button>
-                          <button
-                            onClick={(e) => handleSubmitReply(e, reply.id)}
-                            disabled={submitting}
-                            className="px-5 py-2 text-xs typewriter bg-[#2C2C28] text-white rounded-[2px] shadow-md"
-                          >
-                            Yanıtı Gönder
-                          </button>
-                        </div>
-                      </motion.div>
-                    )}
-                  </motion.div>
-
-                  {/* Yanıtlar Bölümü - Dikey Çizgi ve Girinti ile */}
-                  {reply.replies && reply.replies.length > 0 && (
-                    <div className="mt-2 ml-6 pl-6 relative">
-                      {/* Dikey Bağlantı Çizgisi */}
-                      <div
-                        className="absolute left-0 top-[-20px] bottom-0 w-0.5"
-                        style={{ background: "#D4D2C8", opacity: 0.6 }}
-                      />
-
-                      <div className="space-y-4">
-                        {reply.replies.map((nested: any) => (
-                          <div key={nested.id} className="relative">
-                            {/* Yatay küçük dal çizgisi */}
-                            <div
-                              className="absolute left-[-24px] top-[24px] w-6 h-0.5"
-                              style={{ background: "#D4D2C8", opacity: 0.6 }}
-                            />
-
-                            <motion.div
-                              initial={{ opacity: 0, x: 10 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              className="p-5"
-                              style={{
-                                background: "#FAFAF5",
-                                border: "1px solid rgba(212, 210, 200, 0.8)",
-                                borderLeft: "3px solid #E85D4E", // Yanıtlar turuncu çizgiyle ayrılır
-                                borderRadius: "2px",
-                              }}
-                            >
-                              <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center gap-2">
-                                  <span className="typewriter text-[0.75rem] font-bold text-[#2C2C28]">
-                                    {nested.author?.username}
-                                  </span>
-                                  <span className="handwritten text-[0.7rem] text-[#9B9B8F]">
-                                    {new Date(nested.createdAt).toLocaleDateString('tr-TR')}
-                                  </span>
-                                </div>
-                                <div className="flex gap-2">
-                                  {nested.authorId === currentUser.id && (
-                                    <button
-                                      onClick={() => {
-                                        setEditingCommentId(editingCommentId === nested.id ? null : nested.id);
-                                        setEditCommentContent(nested.content);
-                                      }}
-                                      className={`text-[0.65rem] handwritten transition-colors ${editingCommentId === nested.id ? 'text-[#4A90E2]' : 'text-[#9B9B8F] hover:text-[#4A90E2]'}`}
-                                    >
-                                      Düzenle
-                                    </button>
-                                  )}
-                                  {(nested.authorId === currentUser.id || currentUser.role === 'admin') && (
-                                    <button
-                                      onClick={() => handleDeleteComment(nested.id)}
-                                      className="text-[0.65rem] handwritten text-[#9B9B8F] hover:text-red-500"
-                                    >
-                                      Sil
-                                    </button>
-                                  )}
-                                </div>
-                              </div>
-
-                              {editingCommentId === nested.id ? (
-                                <div className="space-y-2 mb-3">
-                                  <textarea
-                                    value={editCommentContent}
-                                    onChange={(e) => setEditCommentContent(e.target.value)}
-                                    className="w-full p-2 handwritten text-sm border border-[#4A90E2] bg-transparent outline-none rounded-sm"
-                                    rows={2}
-                                  />
-                                  <div className="flex justify-end gap-2">
-                                    <button 
-                                      onClick={() => setEditingCommentId(null)}
-                                      className="px-2 py-0.5 text-[9px] typewriter border border-[#D4D2C8]"
-                                    >
-                                      Vazgeç
-                                    </button>
-                                    <button 
-                                      onClick={() => handleUpdateComment(nested.id)}
-                                      disabled={submitting}
-                                      className="px-2 py-0.5 text-[9px] typewriter bg-[#2C2C28] text-white"
-                                    >
-                                      {submitting ? "..." : "Kaydet"}
-                                    </button>
-                                  </div>
-                                </div>
-                              ) : (
-                                <p className="handwritten text-[0.95rem] leading-relaxed mb-3" style={{ color: "#444" }}>
-                                  {nested.content}
-                                </p>
-                              )}
-
-                              <div className="flex items-center gap-3">
-                                <motion.button
-                                  whileHover={{ scale: 1.1 }}
-                                  whileTap={{ scale: 0.9 }}
-                                  onClick={() => handleVoteComment(nested.id, 1)}
-                                  className="flex items-center gap-1.5 text-[0.7rem] typewriter"
-                                  style={{
-                                    color: nested.votes?.length > 0 ? "#E85D4E" : "#9B9B8F"
-                                  }}
-                                >
-                                  <Heart className="w-3.5 h-3.5" fill={nested.votes?.length > 0 ? "#E85D4E" : "none"} />
-                                  {nested.votes?.length || 0}
-                                </motion.button>
-                              </div>
-                            </motion.div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
+              topic.nestedComments.map((reply: any) => (
+                <CommentNode
+                  key={reply.id}
+                  comment={reply}
+                  depth={0}
+                  currentUser={currentUser}
+                  editingCommentId={editingCommentId}
+                  setEditingCommentId={setEditingCommentId}
+                  editCommentContent={editCommentContent}
+                  setEditCommentContent={setEditCommentContent}
+                  replyToId={replyToId}
+                  setReplyToId={setReplyToId}
+                  replyText={replyText}
+                  setReplyText={setReplyText}
+                  submitting={submitting}
+                  handleVoteComment={handleVoteComment}
+                  handleDeleteComment={handleDeleteComment}
+                  handleUpdateComment={handleUpdateComment}
+                  handleSubmitReply={handleSubmitReply}
+                />
               ))
             ) : (
               <div className="p-8 text-center handwritten" style={{ color: "#9B9B8F" }}>
@@ -792,6 +803,7 @@ export default function TopicDetail() {
 
           <form onSubmit={handleSubmitReply}>
             <textarea
+              ref={replyInputRef}
               id="main-reply-text"
               name="main-reply-text"
               value={replyText}

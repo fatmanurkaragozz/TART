@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { motion } from "motion/react";
 import { Clock } from "lucide-react";
+import { useNavigate } from "react-router";
 
 interface TopicCardProps {
   topic: {
@@ -15,6 +16,7 @@ interface TopicCardProps {
 }
 
 export const TopicCard = memo(({ topic, delay = 0 }: TopicCardProps) => {
+  const navigate = useNavigate();
   // Color level system: gradually add color as users contribute
   const getColorAccent = (level: number) => {
     if (level === 0) return "#6B6B5F"; // monochrome
@@ -113,7 +115,11 @@ export const TopicCard = memo(({ topic, delay = 0 }: TopicCardProps) => {
             e.currentTarget.style.background = "transparent";
             e.currentTarget.style.color = "#2C2C28";
           }}
-          onClick={(e) => e.preventDefault()}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            navigate(`/topic/${topic.id}?join=true`);
+          }}
         >
           Katıl
         </motion.button>
