@@ -14,7 +14,9 @@ class DiscussionService {
         const contentMod = await ModerationService.analyzeText(data.content);
 
         if (!titleMod.isSafe || !contentMod.isSafe) {
-            throw new Error('Tartışma başlığı veya içeriği topluluk kurallarını ihlal ediyor olabilir.');
+            const reason = (!titleMod.isSafe ? titleMod.flaggedReason : '') || (!contentMod.isSafe ? contentMod.flaggedReason : '');
+            const detail = reason ? ` - Neden: ${reason}` : '';
+            throw new Error(`Tartışma başlığı veya içeriği topluluk kurallarını ihlal ediyor olabilir.${detail}`);
         }
         
         return await DiscussionRepository.create(data);
@@ -48,11 +50,17 @@ class DiscussionService {
         // AI Moderasyon Kontrolü
         if (data.title) {
             const titleMod = await ModerationService.analyzeText(data.title);
-            if (!titleMod.isSafe) throw new Error('Yeni başlık topluluk kurallarını ihlal ediyor olabilir.');
+            if (!titleMod.isSafe) {
+                const detail = titleMod.flaggedReason ? ` - Neden: ${titleMod.flaggedReason}` : '';
+                throw new Error(`Yeni başlık topluluk kurallarını ihlal ediyor olabilir.${detail}`);
+            }
         }
         if (data.content) {
             const contentMod = await ModerationService.analyzeText(data.content);
-            if (!contentMod.isSafe) throw new Error('Yeni içerik topluluk kurallarını ihlal ediyor olabilir.');
+            if (!contentMod.isSafe) {
+                const detail = contentMod.flaggedReason ? ` - Neden: ${contentMod.flaggedReason}` : '';
+                throw new Error(`Yeni içerik topluluk kurallarını ihlal ediyor olabilir.${detail}`);
+            }
         }
 
         return await DiscussionRepository.update(id, data);
