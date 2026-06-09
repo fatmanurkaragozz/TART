@@ -1,9 +1,40 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { BookOpen, User } from 'lucide-react-native';
-import { Tabs } from 'expo-router';
+import { Tabs, useRouter } from 'expo-router';
+import { ActivityIndicator, View } from 'react-native';
+import authService from '../../src/services/authService';
 
 export default function TabLayout() {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const token = await authService.getToken();
+      if (!token) {
+        setIsAuthenticated(false);
+        router.replace('/');
+      } else {
+        setIsAuthenticated(true);
+      }
+    };
+    checkAuth();
+  }, []);
+
+  if (isAuthenticated === null) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F5F5F0' }}>
+        <ActivityIndicator size="large" color="#6B6B5F" />
+      </View>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null;
+  }
+
   return (
+
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: "#2C2C28",

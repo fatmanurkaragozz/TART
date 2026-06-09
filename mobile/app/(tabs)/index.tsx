@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import discussionService from '../../src/services/discussionService';
 import userService from '../../src/services/userService';
 import { MessageSquare, ArrowUp, Clock, TrendingUp, Users, Flame, Sparkles } from 'lucide-react-native';
+import IntellectualRecommendations from '../../components/IntellectualRecommendations';
 
 // Oy sayısına göre renk paleti — notebook işaretleyici teması
 const ACCENT_COLORS = ["#E85D4E", "#4A90E2", "#8B9B7A", "#F6C744", "#9B59B6", "#E67E22"];
@@ -18,18 +19,32 @@ const getVoteColor = (votes: number) => {
   return "#9B9B8F";                     // gri — yeni
 };
 
+const TAGS = [
+  "Eğitim",
+  "Sistem Eleştirisi",
+  "Özgürlük",
+  "Tartışma Kültürü",
+  "Akademik Hayat",
+  "Sosyal Sorunlar",
+  "Teknoloji",
+  "Politika",
+];
 
 export default function HomeScreen() {
   const [discussions, setDiscussions] = useState<any[]>([]);
   const [trending, setTrending] = useState<any[]>([]);
   const [suggestedUsers, setSuggestedUsers] = useState<any[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [visibleLimit, setVisibleLimit] = useState(5);
   const router = useRouter();
 
-  const fetchData = async () => {
+  const fetchData = async (tagToUse?: string | null) => {
     try {
+      const activeTag = tagToUse !== undefined ? tagToUse : selectedTag;
+      const params = activeTag ? { tag: activeTag } : undefined;
       const [discussionsRes, trendingRes, suggestedRes] = await Promise.all([
-        discussionService.getAllDiscussions(),
+        discussionService.getAllDiscussions(params),
         discussionService.getTrending(),
         userService.getSuggestedUsers()
       ]);
@@ -41,11 +56,17 @@ export default function HomeScreen() {
     }
   };
 
+  const handleSelectTag = (tag: string | null) => {
+    setSelectedTag(tag);
+    setVisibleLimit(5);
+    fetchData(tag);
+  };
+
   const handleFollowUser = async (userId: string) => {
     try {
       await userService.followUser(userId);
       Alert.alert("Başarılı", "Kullanıcı takip edildi.");
-      fetchData();
+      fetchData(selectedTag);
     } catch (error: any) {
       Alert.alert("Hata", error.message);
     }
@@ -54,7 +75,7 @@ export default function HomeScreen() {
   const handleVoteDiscussion = async (id: string, value: number) => {
     try {
       await discussionService.voteDiscussion(id, value);
-      fetchData();
+      fetchData(selectedTag);
     } catch (error: any) {
       console.error(error);
     }
@@ -64,7 +85,8 @@ export default function HomeScreen() {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await fetchData();
+    setVisibleLimit(5);
+    await fetchData(selectedTag);
     setRefreshing(false);
   };
 
@@ -232,6 +254,9 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* Entelektüel Öneriler */}
+      <IntellectualRecommendations />
+
       {/* ─── TREND TARTIŞMALAR ─── */}
       {trending.length > 0 && (
         <View style={{ marginBottom: 24 }}>
@@ -312,7 +337,7 @@ export default function HomeScreen() {
 
           <FlatList
             horizontal
-            data={suggestedUsers}
+            data={suggestedUsers.slice(0, 4)}
             keyExtractor={(item: any) => `suggested-${item.id}`}
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={{ paddingRight: 8 }}
@@ -383,6 +408,31 @@ export default function HomeScreen() {
               );
             }}
           />
+
+          {/* Manifesto Link */}
+          <TouchableOpacity
+            onPress={() => router.push("/legal?type=guidelines")}
+            style={{
+              backgroundColor: "#FFFEF5",
+              borderWidth: 1,
+              borderColor: "#D4D2C8",
+              borderRadius: 2,
+              padding: 14,
+              marginTop: 12,
+              shadowColor: "#000",
+              shadowOffset: { width: 2, height: 2 },
+              shadowOpacity: 0.08,
+              shadowRadius: 0,
+              elevation: 1,
+            }}
+          >
+            <Text style={{ fontFamily: "Courier", fontSize: 13, color: "#E85D4E", fontWeight: "bold", marginBottom: 4 }}>
+              Manifestomuz
+            </Text>
+            <Text style={{ fontFamily: "System", fontSize: 11, color: "#6B6B5F" }}>
+              İşleyiş prensiplerimizi oku
+            </Text>
+          </TouchableOpacity>
         </View>
       )}
 
@@ -395,13 +445,51 @@ export default function HomeScreen() {
         </View>
         <View style={{ flex: 1, height: 1, backgroundColor: "#D4D2C8" }} />
       </View>
+
+      {/* Kategori Barı */}
+      <View style={{ marginBottom: 16 }}>
+        <FlatList
+          horizontal
+          data={["Tümü", ...TAGS]}
+          keyExtractor={(tag) => tag}
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ gap: 8 }}
+          renderItem={({ item }) => {
+            const isSelected = item === "Tümü" ? selectedTag === null : selectedTag === item;
+            return (
+              <TouchableOpacity
+                onPress={() => handleSelectTag(item === "Tümü" ? null : item)}
+                style={{
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  borderRadius: 2,
+                  borderWidth: 1,
+                  borderColor: isSelected ? "#2C2C28" : "#D4D2C8",
+                  backgroundColor: isSelected ? "#2C2C28" : "#FFFEF5",
+                }}
+              >
+                <Text
+                  style={{
+                    fontFamily: "System",
+                    fontSize: 12,
+                    color: isSelected ? "#F5F5F0" : "#6B6B5F",
+                    fontWeight: isSelected ? "bold" : "normal",
+                  }}
+                >
+                  {item}
+                </Text>
+              </TouchableOpacity>
+            );
+          }}
+        />
+      </View>
     </View>
   );
 
   return (
     <View style={{ flex: 1, backgroundColor: "#F5F5F0", paddingHorizontal: 16 }}>
       <FlatList
-        data={discussions}
+        data={discussions.slice(0, visibleLimit)}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}
@@ -410,6 +498,32 @@ export default function HomeScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#E85D4E" />
         }
         ListHeaderComponent={ListHeader}
+        ListFooterComponent={
+          discussions.length > visibleLimit ? (
+            <View style={{ alignItems: "center", paddingVertical: 16 }}>
+              <TouchableOpacity
+                onPress={() => setVisibleLimit((prev) => prev + 5)}
+                style={{
+                  paddingHorizontal: 16,
+                  paddingVertical: 10,
+                  backgroundColor: "#FFFEF5",
+                  borderWidth: 1,
+                  borderColor: "#D4D2C8",
+                  borderRadius: 2,
+                  shadowColor: "#000",
+                  shadowOffset: { width: 2, height: 2 },
+                  shadowOpacity: 0.08,
+                  shadowRadius: 0,
+                  elevation: 1,
+                }}
+              >
+                <Text style={{ fontFamily: "Courier", fontSize: 12, color: "#2C2C28", fontWeight: "bold" }}>
+                  Daha Fazla Tartışma Göster
+                </Text>
+              </TouchableOpacity>
+            </View>
+          ) : null
+        }
         ListEmptyComponent={() => (
           <View
             style={{
@@ -448,3 +562,4 @@ export default function HomeScreen() {
     </View>
   );
 }
+

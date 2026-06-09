@@ -45,7 +45,12 @@ export default function CreateTopicScreen() {
       await discussionService.createDiscussion(formData);
       router.back();
     } catch (err: any) {
-      Alert.alert("Hata", err.message || "Tartışma oluşturulurken bir hata oluştu");
+      const msg = err.message || "Tartışma oluşturulurken bir hata oluştu";
+      if (msg.toLowerCase().includes("topluluk kuralları") || msg.toLowerCase().includes("ihlal")) {
+        Alert.alert("Topluluk Kuralları İhlali", msg);
+      } else {
+        Alert.alert("Hata", msg);
+      }
     } finally {
       setLoading(false);
     }

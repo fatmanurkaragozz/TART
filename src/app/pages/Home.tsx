@@ -7,6 +7,7 @@ import { TopicSkeleton } from "../components/Skeleton";
 import { TagFilter } from "../components/TagFilter";
 import { PromptCard } from "../components/PromptCard";
 import { DevNav } from "../components/DevNav";
+import { IntellectualSidebar } from "../components/IntellectualSidebar";
 import discussionService from "../../services/discussionService";
 import userService from "../../services/userService";
 import { toast } from "sonner";
@@ -36,6 +37,7 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"discover" | "following">("discover");
   const [hasUnreadNotifications, setHasUnreadNotifications] = useState(false);
+  const [visibleLimit, setVisibleLimit] = useState(5);
   const navigate = useNavigate();
 
   const { scrollY } = useScroll();
@@ -64,6 +66,7 @@ export default function Home() {
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
+      setVisibleLimit(5);
       fetchTopics();
     }, 500);
 
@@ -128,7 +131,7 @@ export default function Home() {
 
   const toggleTag = (tag: string) => {
     setSelectedTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+      prev.includes(tag) ? [] : [tag]
     );
   };
 
@@ -347,17 +350,27 @@ export default function Home() {
       </nav>
 
       {/* Main Content */}
-      <div className="max-w-[1200px] mx-auto px-6 lg:px-8 py-8 relative z-10">
-        <div className="grid lg:grid-cols-[1fr_320px] gap-8">
-          {/* Left Column - Topic Feed */}
-          <main>
+      <div className="max-w-[1400px] mx-auto px-6 lg:px-8 py-8 relative z-10">
+        <div className="grid lg:grid-cols-[350px_1fr_320px] gap-8">
+          {/* Left Column - Intellectual depth recommendations */}
+          <aside className="hidden lg:block lg:sticky lg:top-24 h-fit">
+            <IntellectualSidebar />
+          </aside>
+
+          {/* Middle Column - Topic Feed */}
+          <main className="min-w-0">
+            {/* Mobile/Tablet Intellectual depth recommendations */}
+            <div className="block lg:hidden mb-8">
+              <IntellectualSidebar />
+            </div>
+
             {/* Haftanın Sorusu / Prompt */}
             <div className="mb-8">
               <PromptCard />
             </div>
 
             {/* Tabs */}
-            <div className="flex items-center gap-6 mb-8 border-b border-[#D4D2C8]">
+            <div className="flex items-center gap-6 mb-6 border-b border-[#D4D2C8]">
               <button
                 onClick={() => setActiveTab("discover")}
                 className="pb-3 px-1 text-sm typewriter transition-all relative"
@@ -392,6 +405,23 @@ export default function Home() {
               </button>
             </div>
 
+            {/* Kategori Barı (Yatay Kaydırılabilir) */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-6 scrollbar-none snap-x snap-mandatory">
+              <TagFilter
+                tag="Tümü"
+                isSelected={selectedTags.length === 0}
+                onClick={() => setSelectedTags([])}
+              />
+              {tags.map((tag) => (
+                <TagFilter
+                  key={tag}
+                  tag={tag}
+                  isSelected={selectedTags.includes(tag)}
+                  onClick={() => toggleTag(tag)}
+                />
+              ))}
+            </div>
+
             {/* Topic List */}
             {loading ? (
               <div className="handwritten text-center py-12" style={{ color: "#6B6B5F" }}>
@@ -399,7 +429,7 @@ export default function Home() {
               </div>
             ) : topics.length > 0 ? (
               <div className="space-y-4">
-                {topics?.map((topic: any, index: number) => (
+                {topics.slice(0, visibleLimit).map((topic: any, index: number) => (
                   <TopicCard key={topic.id} topic={{
                     ...topic,
                     preview: topic.content.substring(0, 150) + "...",
@@ -407,6 +437,27 @@ export default function Home() {
                     colorLevel: topic.voteScore > 5 ? 1 : 0
                   }} delay={index * 0.05} />
                 ))}
+
+                {/* Load More Button */}
+                {topics.length > visibleLimit && (
+                  <div className="flex justify-center pt-4">
+                    <motion.button
+                      whileHover={{ scale: 1.02, y: -1 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => setVisibleLimit((prev) => prev + 5)}
+                      className="px-6 py-2.5 typewriter text-xs font-medium hover:bg-[#E8E6E0] transition-colors"
+                      style={{
+                        background: "#FFFEF5",
+                        border: "1px solid #D4D2C8",
+                        borderRadius: "2px",
+                        color: "#2C2C28",
+                        boxShadow: "2px 2px 0px rgba(107, 107, 95, 0.1)",
+                      }}
+                    >
+                      Daha Fazla Tartışma Göster
+                    </motion.button>
+                  </div>
+                )}
               </div>
             ) : (
 
@@ -466,7 +517,7 @@ export default function Home() {
           </main>
 
           {/* Right Column - Sidebar */}
-          <aside className="space-y-6">
+          <aside className="space-y-6 lg:sticky lg:top-24 lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto pr-1 custom-scrollbar h-fit">
             {/* Trend Tartışmalar */}
             <motion.div
               initial={{ opacity: 0, x: 20 }}
@@ -523,7 +574,7 @@ export default function Home() {
               </div>
               <div className="space-y-4">
                 {suggestedUsers?.length > 0 ? (
-                  suggestedUsers?.map((u) => (
+                  suggestedUsers?.slice(0, 4).map((u) => (
                     <div key={u.id} className="flex items-center justify-between gap-3">
                       <a href={`/profile/${u.id}`} className="flex items-center gap-2 overflow-hidden hover:opacity-70 transition-opacity">
                         <div className="w-7 h-7 flex-shrink-0 bg-[#E8E6E0] flex items-center justify-center text-[0.6rem] typewriter border border-[#D4D2C8]">
@@ -544,44 +595,6 @@ export default function Home() {
                     Şu an için yeni bir öneri yok.
                   </p>
                 )}
-              </div>
-            </motion.div>
-
-            {/* Tag Filters */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="p-5"
-              style={{
-                background: "#FFFEF5",
-                border: "1px solid #D4D2C8",
-                borderRadius: "2px",
-                boxShadow: "2px 2px 0px rgba(107, 107, 95, 0.15)",
-              }}
-            >
-              <div className="flex items-center gap-2 mb-4">
-                <TagIcon className="w-4 h-4" style={{ color: "#4A90E2" }} />
-                <h3
-                  className="typewriter"
-                  style={{
-                    fontSize: "0.9rem",
-                    color: "#4A90E2",
-                    fontWeight: 400,
-                  }}
-                >
-                  Konular
-                </h3>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {tags.map((tag) => (
-                  <TagFilter
-                    key={tag}
-                    tag={tag}
-                    isSelected={selectedTags.includes(tag)}
-                    onClick={() => toggleTag(tag)}
-                  />
-                ))}
               </div>
             </motion.div>
 

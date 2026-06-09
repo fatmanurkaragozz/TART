@@ -22,6 +22,7 @@ model User {
   comments            Comment[]
   votes               Vote[]
   notifications       Notification[]
+  recommendations     Recommendation[]
   
   // Takip Sistemi (Kendi kendine ilişki)
   followedBy User[] @relation("UserFollows")
@@ -42,6 +43,7 @@ model Discussion {
   updatedAt DateTime  @default(now()) @updatedAt @map("updated_at")
   comments  Comment[]
   votes     Vote[]
+  recommendations Recommendation[]
 
   @@map("discussions")
   @@index([authorId])
@@ -108,4 +110,23 @@ model ContactMessage {
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("contact_messages")
+}
+
+model Recommendation {
+  id           String      @id @default(uuid()) @db.Uuid
+  title        String
+  type         String
+  label        String
+  coverUrl     String?     @map("cover_url")
+  description  String      @db.Text
+  isAi         Boolean     @default(false) @map("is_ai")
+  authorId     String?     @map("author_id") @db.Uuid
+  author       User?       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  discussionId String?     @map("discussion_id") @db.Uuid
+  discussion   Discussion? @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+  createdAt    DateTime    @default(now()) @map("created_at")
+
+  @@map("recommendations")
+  @@index([discussionId])
+  @@index([authorId])
 }

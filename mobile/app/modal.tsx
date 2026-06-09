@@ -6,6 +6,7 @@ import discussionService from '../src/services/discussionService';
 import commentService from '../src/services/commentService';
 import userService from '../src/services/userService';
 import { ThumbsUp as ThumbsUpFilled } from 'lucide-react-native';
+import IntellectualRecommendations from '../components/IntellectualRecommendations';
 
 export default function TopicDetailScreen() {
   const { id, accentColor: accentParam } = useLocalSearchParams<{ id: string; accentColor?: string }>();
@@ -27,26 +28,18 @@ export default function TopicDetailScreen() {
     if (id) {
       fetchTopicDetails();
     }
-    loadCurrentUser();
   }, [id]);
-
-  const loadCurrentUser = async () => {
-    try {
-      const res = await userService.getMyProfile();
-      const me = res?.data;
-      if (me) {
-        setCurrentUserId(me.id);
-      }
-    } catch (e) {
-      // sessiz fail
-    }
-  };
 
   const fetchTopicDetails = async () => {
     try {
       setLoading(true);
-      const response = await discussionService.getDiscussionById(id as string);
-      const data = response.data;
+      // Tartışma detaylarını ve kullanıcı profilini paralel olarak sorgula
+      const [topicRes, meRes] = await Promise.all([
+        discussionService.getDiscussionById(id as string),
+        userService.getMyProfile().catch(() => null)
+      ]);
+
+      const data = topicRes.data;
       setTopic(data);
 
       // Yorumları hiyerarşik yapıya dönüştür
@@ -67,16 +60,13 @@ export default function TopicDetailScreen() {
       });
       setNestedComments(roots);
 
-      // Takip durumunu profil bilgisiyle kontrol et
-      try {
-        const meRes = await userService.getMyProfile();
-        const me = meRes?.data;
-        if (me) {
-          setCurrentUserId(me.id);
-          const myFollowing: any[] = me.following || [];
-          setIsFollowing(myFollowing.some((u: any) => u.id === data.authorId));
-        }
-      } catch (_) {}
+      // Kullanıcı profilini ve yazar takip durumunu güncelle
+      const me = meRes?.data;
+      if (me) {
+        setCurrentUserId(me.id);
+        const myFollowing: any[] = me.following || [];
+        setIsFollowing(myFollowing.some((u: any) => u.id === data.authorId));
+      }
     } catch (error: any) {
       console.error(error);
       Alert.alert("Hata", "Tartışma yüklenemedi.");
@@ -179,7 +169,12 @@ export default function TopicDetailScreen() {
       refreshInBackground(); // Spinner göstermeden arka planda güncelle
     } catch (error: any) {
       console.error(error);
-      Alert.alert("Hata", "Yanıt gönderilemedi.");
+      const msg = error.message || "Yanıt gönderilemedi.";
+      if (msg.toLowerCase().includes("topluluk kuralları") || msg.toLowerCase().includes("ihlal")) {
+        Alert.alert("Topluluk Kuralları İhlali", msg);
+      } else {
+        Alert.alert("Hata", msg);
+      }
     } finally {
       setSubmitting(false);
     }
@@ -215,7 +210,13 @@ export default function TopicDetailScreen() {
         {/* Back Button */}
         <TouchableOpacity 
           onPress={() => router.back()}
-          className="flex-row items-center mb-6"
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            marginTop: Platform.OS === "ios" ? 28 : 16,
+            marginBottom: 24,
+            paddingVertical: 10,
+          }}
         >
           <ArrowLeft size={16} color="#6B6B5F" />
           <Text className="text-pencil ml-2" style={{ fontFamily: "System" }}>Tartışmalara dön</Text>
@@ -339,6 +340,9 @@ export default function TopicDetailScreen() {
           {/* Color accent underline */}
           <View className="h-0.5 bg-pencil w-1/3 opacity-30" />
         </View>
+
+        {/* Entelektüel Öneriler */}
+        <IntellectualRecommendations discussionId={id as string} />
 
         {/* Replies Section */}
         <View className="mb-8">
