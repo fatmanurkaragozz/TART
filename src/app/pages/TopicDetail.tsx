@@ -3,6 +3,7 @@ import { ArrowLeft, MessageSquare, Heart, Flag, Loader2, Pen, X, Check } from "l
 import { useState, useEffect, useRef } from "react";
 import { useParams, Link, useNavigate, useSearchParams } from "react-router";
 import { DevNav } from "../components/DevNav";
+import { IntellectualSidebar } from "../components/IntellectualSidebar";
 import discussionService from "../../services/discussionService";
 import commentService from "../../services/commentService";
 import { toast } from "sonner";
@@ -518,18 +519,31 @@ export default function TopicDetail() {
         </svg>
       </div>
 
-      <div className="max-w-[900px] mx-auto px-6 py-12 relative z-10">
-        {/* Back Button */}
-        <Link
-          to="/home"
-          className="inline-flex items-center gap-2 mb-8 text-sm handwritten transition-colors"
-          style={{ color: "#6B6B5F", textDecoration: 'none' }}
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Tartışmalara dön
-        </Link>
+      <div className="max-w-[1400px] mx-auto px-6 py-12 relative z-10">
+        <div className="grid lg:grid-cols-[350px_1fr] gap-8">
+          {/* Left Column: Intellectual Depth */}
+          <aside className="hidden lg:block lg:sticky lg:top-24 h-fit">
+            <IntellectualSidebar discussionId={id} />
+          </aside>
 
-        {/* Main Topic Card */}
+          {/* Right Column: Main Content */}
+          <div className="min-w-0">
+            {/* Back Button */}
+            <Link
+              to="/home"
+              className="inline-flex items-center gap-2 mb-8 text-sm handwritten transition-colors"
+              style={{ color: "#6B6B5F", textDecoration: 'none' }}
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Tartışmalara dön
+            </Link>
+
+            {/* Mobile/Tablet Intellectual depth recommendations */}
+            <div className="block lg:hidden mb-8">
+              <IntellectualSidebar discussionId={id} />
+            </div>
+
+            {/* Main Topic Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -855,6 +869,8 @@ export default function TopicDetail() {
             </motion.button>
           </form>
         </motion.div>
+          </div>
+        </div>
       </div>
 
       {/* Dev Navigation */}
