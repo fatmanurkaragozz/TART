@@ -9,6 +9,7 @@ import userRoutes from './routes/userRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import contactRoutes from './routes/contactRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
+import recommendationRoutes from './routes/recommendationRoutes.js';
 import errorHandler from './middleware/errorHandler.js';
 import ApiError from './utils/ApiError.js';
 
@@ -42,6 +43,7 @@ app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1/contact', contactRoutes);
 app.use('/api/v1/admin', adminRoutes);
+app.use('/api/v1/recommendations', recommendationRoutes);
 
 
 // 6. 404
