@@ -1,4 +1,4 @@
-import api from './api';
+import api from './apiClient';
 
 const notificationService = {
     getMyNotifications: async () => {

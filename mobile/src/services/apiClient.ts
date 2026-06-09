@@ -1,6 +1,7 @@
 import axios from 'axios';
 import Constants from 'expo-constants';
 import * as SecureStore from 'expo-secure-store';
+import { router } from 'expo-router';
 
 // Geliştirme aşamasında bilgisayarın IP adresini otomatik bulmak için
 const debuggerHost = Constants.expoConfig?.hostUri;
@@ -33,4 +34,23 @@ apiClient.interceptors.request.use(async (config) => {
   return Promise.reject(error);
 });
 
+// Interceptor: 401 Unauthorized hatalarını yakala ve oturumu sonlandır
+apiClient.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (error.response && error.response.status === 401) {
+      try {
+        await SecureStore.deleteItemAsync('token');
+        await SecureStore.deleteItemAsync('user');
+        // Kök dizine (açılış sayfasına) yönlendir
+        router.replace('/');
+      } catch (e) {
+        console.error('Logout error on 401:', e);
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default apiClient;
+

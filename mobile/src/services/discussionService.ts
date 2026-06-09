@@ -1,9 +1,9 @@
 import apiClient from './apiClient';
 
 class DiscussionService {
-    async getAllDiscussions() {
+    async getAllDiscussions(params?: { search?: string; tag?: string }) {
         try {
-            const response = await apiClient.get('/discussions');
+            const response = await apiClient.get('/discussions', { params });
             return response.data;
         } catch (error: any) {
             this.handleError(error);
