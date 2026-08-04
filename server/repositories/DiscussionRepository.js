@@ -9,14 +9,15 @@ class DiscussionRepository {
      * @param   {object} discussionData
      */
     async create(discussionData) {
-        const { title, content, authorId, tags } = discussionData;
-        
+        const { title, content, authorId, tags, imageUrl } = discussionData;
+
         return await prisma.discussion.create({
             data: {
                 title,
                 content,
                 authorId,
-                tags: tags || []
+                tags: tags || [],
+                imageUrl: imageUrl || null
             }
         });
     }
@@ -122,13 +123,14 @@ class DiscussionRepository {
      * @desc    Tartışmayı güncelle
      */
     async update(id, discussionData) {
-        const { title, content, tags } = discussionData;
+        const { title, content, tags, imageUrl } = discussionData;
         return await prisma.discussion.update({
             where: { id },
             data: {
                 title,
                 content,
-                tags: tags || undefined
+                tags: tags || undefined,
+                imageUrl
             }
         });
     }

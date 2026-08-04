@@ -1,5 +1,5 @@
 import { motion } from "motion/react";
-import { ArrowLeft, MessageSquare, Heart, Flag, Loader2, Pen, X, Check } from "lucide-react";
+import { ArrowLeft, MessageSquare, Heart, Flag, Loader2, Pen, X, Check, ImagePlus } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useParams, Link, useNavigate, useSearchParams } from "react-router";
 import { DevNav } from "../components/DevNav";
@@ -273,6 +273,9 @@ function CommentNode({
   );
 }
 
+const MAX_IMAGE_SIZE_MB = 5;
+const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+
 export default function TopicDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -289,6 +292,10 @@ export default function TopicDetail() {
   const [isEditingTopic, setIsEditingTopic] = useState(false);
   const [editTopicTitle, setEditTopicTitle] = useState("");
   const [editTopicContent, setEditTopicContent] = useState("");
+  const [editTopicImage, setEditTopicImage] = useState<File | null>(null);
+  const [editTopicImagePreview, setEditTopicImagePreview] = useState<string | null>(null);
+  const [editTopicRemoveImage, setEditTopicRemoveImage] = useState(false);
+  const editImageInputRef = useRef<HTMLInputElement>(null);
 
   // Editing Comment States
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
@@ -301,6 +308,39 @@ export default function TopicDetail() {
       fetchTopicDetails();
     }
   }, [id]);
+
+  useEffect(() => {
+    return () => {
+      if (editTopicImagePreview) URL.revokeObjectURL(editTopicImagePreview);
+    };
+  }, [editTopicImagePreview]);
+
+  const handleEditImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      toast.error("Sadece JPEG, PNG, WEBP veya GIF formatında görsel yükleyebilirsiniz");
+      return;
+    }
+    if (file.size > MAX_IMAGE_SIZE_MB * 1024 * 1024) {
+      toast.error(`Görsel en fazla ${MAX_IMAGE_SIZE_MB}MB olabilir`);
+      return;
+    }
+
+    if (editTopicImagePreview) URL.revokeObjectURL(editTopicImagePreview);
+    setEditTopicImage(file);
+    setEditTopicImagePreview(URL.createObjectURL(file));
+    setEditTopicRemoveImage(false);
+  };
+
+  const handleRemoveEditImage = () => {
+    if (editTopicImagePreview) URL.revokeObjectURL(editTopicImagePreview);
+    setEditTopicImage(null);
+    setEditTopicImagePreview(null);
+    setEditTopicRemoveImage(true);
+  };
 
   useEffect(() => {
     if (!loading && topic && joinParam === "true") {
@@ -406,10 +446,13 @@ export default function TopicDetail() {
     if (!editTopicTitle.trim() || !editTopicContent.trim()) return;
     try {
       setSubmitting(true);
-      await discussionService.updateDiscussion(id!, {
-        title: editTopicTitle,
-        content: editTopicContent
-      });
+      const form = new FormData();
+      form.append("title", editTopicTitle);
+      form.append("content", editTopicContent);
+      if (editTopicImage) form.append("image", editTopicImage);
+      if (editTopicRemoveImage) form.append("removeImage", "true");
+
+      await discussionService.updateDiscussion(id!, form);
       toast.success("Tartışma güncellendi.");
       setIsEditingTopic(false);
       fetchTopicDetails();
@@ -595,6 +638,9 @@ export default function TopicDetail() {
                     setIsEditingTopic(!isEditingTopic);
                     setEditTopicTitle(topic.title);
                     setEditTopicContent(topic.content);
+                    setEditTopicImage(null);
+                    setEditTopicImagePreview(null);
+                    setEditTopicRemoveImage(false);
                   }}
                   className="p-2"
                   style={{
@@ -640,6 +686,61 @@ export default function TopicDetail() {
                 className="w-full p-4 handwritten border-2 border-[#D4D2C8] bg-transparent outline-none rounded-sm"
                 rows={8}
               />
+
+              {/* Image editing */}
+              <div>
+                <input
+                  type="file"
+                  accept={ALLOWED_IMAGE_TYPES.join(",")}
+                  ref={editImageInputRef}
+                  onChange={handleEditImageChange}
+                  style={{ display: "none" }}
+                />
+                {editTopicImagePreview || (!editTopicRemoveImage && topic.imageUrl) ? (
+                  <div className="relative inline-block">
+                    <img
+                      src={editTopicImagePreview || topic.imageUrl}
+                      alt="Tartışma görseli"
+                      style={{
+                        maxHeight: "200px",
+                        maxWidth: "100%",
+                        borderRadius: "2px",
+                        border: "1px solid #D4D2C8",
+                        display: "block",
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleRemoveEditImage}
+                      className="absolute flex items-center justify-center"
+                      style={{
+                        top: "-8px",
+                        right: "-8px",
+                        width: "24px",
+                        height: "24px",
+                        background: "#2C2C28",
+                        color: "#F5F5F0",
+                        borderRadius: "50%",
+                        border: "2px solid #FFFEF5",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => editImageInputRef.current?.click()}
+                    className="px-4 py-2 text-xs handwritten flex items-center gap-2 border border-dashed border-[#D4D2C8]"
+                    style={{ color: "#6B6B5F" }}
+                  >
+                    <ImagePlus className="w-3.5 h-3.5" />
+                    Görsel ekle
+                  </button>
+                )}
+              </div>
+
               <div className="flex justify-end gap-2">
                 <button
                   onClick={() => setIsEditingTopic(false)}
@@ -702,6 +803,25 @@ export default function TopicDetail() {
               >
                 {topic.content}
               </div>
+
+              {/* Image */}
+              {topic.imageUrl && (
+                <div className="mb-6">
+                  <a href={topic.imageUrl} target="_blank" rel="noopener noreferrer">
+                    <img
+                      src={topic.imageUrl}
+                      alt={topic.title}
+                      style={{
+                        display: "block",
+                        maxWidth: "100%",
+                        maxHeight: "420px",
+                        borderRadius: "2px",
+                        border: "1px solid #D4D2C8",
+                      }}
+                    />
+                  </a>
+                </div>
+              )}
             </>
           )}
 

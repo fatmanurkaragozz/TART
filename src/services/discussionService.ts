@@ -30,11 +30,13 @@ class DiscussionService {
     }
 
     /**
-     * @desc    Yeni tartışma oluştur
+     * @desc    Yeni tartışma oluştur (görsel için multipart/form-data)
      */
-    async createDiscussion(discussionData: { title: string; content: string; tags: string[] }) {
+    async createDiscussion(discussionData: FormData) {
         try {
-            const response = await api.post('/discussions', discussionData);
+            const response = await api.post('/discussions', discussionData, {
+                headers: { 'Content-Type': undefined },
+            });
             return response.data;
         } catch (error: any) {
             this.handleError(error);
@@ -42,11 +44,13 @@ class DiscussionService {
     }
 
     /**
-     * @desc    Tartışmayı güncelle
+     * @desc    Tartışmayı güncelle (görsel için multipart/form-data)
      */
-    async updateDiscussion(id: string, discussionData: { title?: string; content?: string; tags?: string[] }) {
+    async updateDiscussion(id: string, discussionData: FormData) {
         try {
-            const response = await api.put(`/discussions/${id}`, discussionData);
+            const response = await api.put(`/discussions/${id}`, discussionData, {
+                headers: { 'Content-Type': undefined },
+            });
             return response.data;
         } catch (error: any) {
             this.handleError(error);

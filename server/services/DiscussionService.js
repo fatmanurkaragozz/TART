@@ -2,6 +2,7 @@ import DiscussionRepository from '../repositories/DiscussionRepository.js';
 import VoteRepository from '../repositories/VoteRepository.js';
 import NotificationService from './NotificationService.js';
 import ModerationService from './ModerationService.js';
+import StorageService from './StorageService.js';
 
 class DiscussionService {
     async createNewDiscussion(data) {
@@ -18,8 +19,10 @@ class DiscussionService {
             const detail = reason ? ` - Neden: ${reason}` : '';
             throw new Error(`Tartışma başlığı veya içeriği topluluk kurallarını ihlal ediyor olabilir.${detail}`);
         }
-        
-        return await DiscussionRepository.create(data);
+
+        const imageUrl = await StorageService.uploadDiscussionImage(data.imageFile, data.authorId);
+
+        return await DiscussionRepository.create({ ...data, imageUrl });
     }
 
     async getAllDiscussions(filters) {
@@ -63,7 +66,19 @@ class DiscussionService {
             }
         }
 
-        return await DiscussionRepository.update(id, data);
+        // Görsel değişikliği (yükleme/kaldırma) — belirtilmemişse mevcut görsele dokunulmaz
+        let imageUrl;
+        if (data.imageFile) {
+            imageUrl = await StorageService.uploadDiscussionImage(data.imageFile, discussion.authorId);
+            if (discussion.imageUrl) {
+                await StorageService.deleteDiscussionImage(discussion.imageUrl);
+            }
+        } else if (data.removeImage && discussion.imageUrl) {
+            await StorageService.deleteDiscussionImage(discussion.imageUrl);
+            imageUrl = null;
+        }
+
+        return await DiscussionRepository.update(id, { ...data, imageUrl });
     }
 
     async deleteDiscussion(id, userId, userRole) {
@@ -103,7 +118,7 @@ class DiscussionService {
                     userId: discussion.authorId,
                     senderId: userId,
                     type: 'VOTE',
-                    message: `"${discussion.title}" konulu tartışmanız beğenildi.`,
+                    message: `{{senderName}} "${discussion.title}" konulu tartışmanızı beğendi.`,
                     targetId: id
                 });
             } catch (err) {

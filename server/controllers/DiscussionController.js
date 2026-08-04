@@ -1,4 +1,5 @@
 import DiscussionService from '../services/DiscussionService.js';
+import ApiError from '../utils/ApiError.js';
 
 class DiscussionController {
     async createDiscussion(req, res, next) {
@@ -10,7 +11,7 @@ class DiscussionController {
             }
 
             const { title, content, tags } = req.body;
-            
+
             // Prisma bazen id, bazen _id dönebilir (yapılandırmaya bağlı)
             const authorId = req.user.id || req.user._id;
 
@@ -21,11 +22,20 @@ class DiscussionController {
 
             console.log(`BİLGİ: ${authorId} id'li kullanıcı için tartışma oluşturuluyor...`);
 
+            // FormData üzerinden gelen tags bir JSON string'dir
+            let parsedTags = [];
+            try {
+                parsedTags = tags ? JSON.parse(tags) : [];
+            } catch {
+                parsedTags = [];
+            }
+
             const discussion = await DiscussionService.createNewDiscussion({
                 title,
                 content,
                 authorId,
-                tags
+                tags: parsedTags,
+                imageFile: req.file || null
             });
             
             res.status(201).json({
@@ -77,11 +87,26 @@ class DiscussionController {
     async updateDiscussion(req, res, next) {
         try {
             const { id } = req.params;
-            const { title, content, tags } = req.body;
+            const { title, content, tags, removeImage } = req.body;
             const userId = req.user.id;
             const userRole = req.user.role;
 
-            const discussion = await DiscussionService.updateDiscussion(id, { title, content, tags }, userId, userRole);
+            let parsedTags;
+            if (tags !== undefined) {
+                try {
+                    parsedTags = JSON.parse(tags);
+                } catch {
+                    parsedTags = undefined;
+                }
+            }
+
+            const discussion = await DiscussionService.updateDiscussion(id, {
+                title,
+                content,
+                tags: parsedTags,
+                imageFile: req.file || null,
+                removeImage: removeImage === 'true'
+            }, userId, userRole);
 
             res.json({
                 success: true,

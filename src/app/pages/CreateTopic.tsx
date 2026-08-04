@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
-import { ArrowLeft, Tag as TagIcon } from "lucide-react";
+import { useLocation } from "react-router";
+import { ArrowLeft, ImagePlus, Tag as TagIcon, X } from "lucide-react";
 import { DevNav } from "../components/DevNav";
 import discussionService from "../../services/discussionService";
 
@@ -15,14 +16,34 @@ const availableTags = [
   "Politika",
 ];
 
+const MAX_IMAGE_SIZE_MB = 5;
+const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+
 export default function CreateTopic() {
+  const location = useLocation();
+  const promptTitle = (location.state as { promptTitle?: string } | null)?.promptTitle || "";
+
   const [formData, setFormData] = useState({
-    title: "",
+    title: promptTitle,
     content: "",
     tags: [] as string[],
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [image, setImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const contentRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (promptTitle) contentRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (imagePreview) URL.revokeObjectURL(imagePreview);
+    };
+  }, [imagePreview]);
 
   const toggleTag = (tag: string) => {
     setFormData((prev) => ({
@@ -33,6 +54,32 @@ export default function CreateTopic() {
     }));
   };
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      setError("Sadece JPEG, PNG, WEBP veya GIF formatında görsel yükleyebilirsiniz");
+      return;
+    }
+    if (file.size > MAX_IMAGE_SIZE_MB * 1024 * 1024) {
+      setError(`Görsel en fazla ${MAX_IMAGE_SIZE_MB}MB olabilir`);
+      return;
+    }
+
+    setError("");
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setImage(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  const removeImage = () => {
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setImage(null);
+    setImagePreview(null);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -40,8 +87,14 @@ export default function CreateTopic() {
 
     try {
       // API çağrısı
-      await discussionService.createDiscussion(formData);
-      
+      const form = new FormData();
+      form.append("title", formData.title);
+      form.append("content", formData.content);
+      form.append("tags", JSON.stringify(formData.tags));
+      if (image) form.append("image", image);
+
+      await discussionService.createDiscussion(form);
+
       // Başarılı ise ana sayfaya yönlendir
       window.location.href = "/home";
     } catch (err: any) {
@@ -202,6 +255,7 @@ export default function CreateTopic() {
               </label>
               <textarea
                 id="content"
+                ref={contentRef}
                 value={formData.content}
                 onChange={(e) =>
                   setFormData({ ...formData, content: e.target.value })
@@ -273,6 +327,73 @@ export default function CreateTopic() {
                   </motion.button>
                 ))}
               </div>
+            </div>
+
+            {/* Image */}
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <ImagePlus className="w-4 h-4" style={{ color: "#6B6B5F" }} />
+                <label className="text-sm handwritten" style={{ color: "#6B6B5F" }}>
+                  Görsel (opsiyonel)
+                </label>
+              </div>
+
+              <input
+                type="file"
+                accept={ALLOWED_IMAGE_TYPES.join(",")}
+                ref={fileInputRef}
+                onChange={handleImageChange}
+                style={{ display: "none" }}
+              />
+
+              {imagePreview ? (
+                <div className="relative inline-block">
+                  <img
+                    src={imagePreview}
+                    alt="Seçilen görsel önizlemesi"
+                    style={{
+                      width: "160px",
+                      height: "160px",
+                      objectFit: "cover",
+                      border: "1px solid #D4D2C8",
+                      borderRadius: "2px",
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={removeImage}
+                    className="absolute flex items-center justify-center"
+                    style={{
+                      top: "-8px",
+                      right: "-8px",
+                      width: "24px",
+                      height: "24px",
+                      background: "#2C2C28",
+                      color: "#F5F5F0",
+                      borderRadius: "50%",
+                      border: "2px solid #FFFEF5",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="px-4 py-3 handwritten text-sm"
+                  style={{
+                    background: "transparent",
+                    border: "1px dashed #D4D2C8",
+                    borderRadius: "2px",
+                    color: "#6B6B5F",
+                    cursor: "pointer",
+                  }}
+                >
+                  Görsel seç (en fazla {MAX_IMAGE_SIZE_MB}MB)
+                </button>
+              )}
             </div>
 
             {/* Submit */}
