@@ -19,13 +19,11 @@ export const protect = async (req, res, next) => {
         }
 
         // 2. Token'ı doğrula
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'tart_super_secret');
-        console.log('DEBUG: Decoded token:', decoded);
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
         // 3. Kullanıcıyı bul ve req objesine ekle
         const user = await UserRepository.findById(decoded.id);
-        console.log('DEBUG: User from DB:', user);
-        
+
         if (!user) {
             return next(new ApiError(401, 'Token geçersiz veya kullanıcı artık mevcut değil'));
         }

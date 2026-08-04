@@ -63,7 +63,6 @@ class AuthController {
      */
     async forgotPassword(req, res, next) {
         try {
-            console.log('Forgot password request received:', req.body);
             const { email } = req.body;
 
             if (!email) {
