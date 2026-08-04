@@ -11,6 +11,7 @@ const router = express.Router();
  */
 router.get('/me', protect, UserController.getMe);
 router.get('/suggested', protect, UserController.getSuggestedUsers);
+router.get('/search', protect, UserController.searchUsers);
 router.get('/:id', protect, UserController.getUserProfile);
 
 /**

@@ -1,6 +1,7 @@
 import express from 'express';
 import DiscussionController from '../controllers/DiscussionController.js';
 import { protect } from '../middleware/authMiddleware.js';
+import { uploadDiscussionImage } from '../middleware/uploadMiddleware.js';
 
 const router = express.Router();
 
@@ -10,11 +11,11 @@ router.get('/feed/following', protect, DiscussionController.getFollowingFeed);
 
 // 2. Kök Rota
 router.get('/', DiscussionController.getDiscussions);
-router.post('/', protect, DiscussionController.createDiscussion);
+router.post('/', protect, uploadDiscussionImage, DiscussionController.createDiscussion);
 
 // 3. Parametreli Rotalar
 router.get('/:id', DiscussionController.getDiscussionById);
-router.put('/:id', protect, DiscussionController.updateDiscussion);
+router.put('/:id', protect, uploadDiscussionImage, DiscussionController.updateDiscussion);
 router.delete('/:id', protect, DiscussionController.deleteDiscussion);
 router.post('/:id/vote', protect, DiscussionController.voteDiscussion);
 

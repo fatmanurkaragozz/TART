@@ -129,6 +129,23 @@ class UserController {
             next(error);
         }
     }
+
+    /**
+     * @desc    Kullanıcı adı veya ad-soyada göre kullanıcı ara
+     */
+    async searchUsers(req, res, next) {
+        try {
+            const { q } = req.query;
+            const users = await UserRepository.searchUsers(q, req.user.id);
+
+            res.json({
+                success: true,
+                data: users
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 const userController = new UserController();

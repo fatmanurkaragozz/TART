@@ -46,11 +46,29 @@ class CommentService {
                 userId: discussion.authorId,
                 senderId: authorId,
                 type: 'COMMENT',
-                message: `"${discussion.title}" konulu tartışmanıza yeni bir yorum yapıldı.`,
+                message: `{{senderName}} "${discussion.title}" konulu tartışmanıza yanıt verdi.`,
                 targetId: discussionId
             });
         } catch (err) {
             console.error('Bildirim gönderilemedi:', err.message);
+        }
+
+        // 5. Bildirim Gönder (Yanıtlanan yorumun sahibine, eğer bu bir yorum yanıtıysa)
+        if (parentId) {
+            try {
+                const parentComment = await CommentRepository.findById(parentId);
+                if (parentComment && parentComment.authorId !== authorId) {
+                    await NotificationService.createNotification({
+                        userId: parentComment.authorId,
+                        senderId: authorId,
+                        type: 'COMMENT',
+                        message: '{{senderName}} yorumunuza yanıt verdi.',
+                        targetId: discussionId
+                    });
+                }
+            } catch (err) {
+                console.error('Bildirim gönderilemedi:', err.message);
+            }
         }
 
         return comment;
@@ -121,7 +139,7 @@ class CommentService {
                     userId: comment.authorId,
                     senderId: userId,
                     type: 'VOTE',
-                    message: `Bir yorumunuz beğenildi.`,
+                    message: '{{senderName}} yorumunuzu beğendi.',
                     targetId: comment.discussionId
                 });
             } catch (err) {

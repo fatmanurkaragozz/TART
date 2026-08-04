@@ -32,6 +32,9 @@ export default function Home() {
   const [topics, setTopics] = useState<any[]>([]);
   const [trendingTopics, setTrendingTopics] = useState<any[]>([]);
   const [suggestedUsers, setSuggestedUsers] = useState<any[]>([]);
+  const [userSearchQuery, setUserSearchQuery] = useState("");
+  const [userSearchResults, setUserSearchResults] = useState<any[]>([]);
+  const [isSearchingUsers, setIsSearchingUsers] = useState(false);
   const [loading, setLoading] = useState(true);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -72,6 +75,29 @@ export default function Home() {
 
     return () => clearTimeout(delayDebounceFn);
   }, [searchQuery, selectedTags, activeTab]);
+
+  useEffect(() => {
+    if (userSearchQuery.trim().length < 2) {
+      setUserSearchResults([]);
+      setIsSearchingUsers(false);
+      return;
+    }
+
+    setIsSearchingUsers(true);
+    const delayDebounceFn = setTimeout(async () => {
+      try {
+        const res = await userService.searchUsers(userSearchQuery);
+        setUserSearchResults(res?.data || []);
+      } catch (error) {
+        console.error("Kullanıcı arama hatası:", error);
+        setUserSearchResults([]);
+      } finally {
+        setIsSearchingUsers(false);
+      }
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [userSearchQuery]);
 
   const fetchNotificationStatus = async () => {
     try {
@@ -123,7 +149,10 @@ export default function Home() {
     try {
       await userService.followUser(userId);
       toast.success("Takip edildi");
-      fetchSideData(); // Listeyi yenile
+      fetchSideData(); // Öneri listesini yenile
+      setUserSearchResults((prev) =>
+        prev.map((u) => (u.id === userId ? { ...u, isFollowing: true } : u))
+      ); // Arama sonucundaki butonu anında güncelle
     } catch (error: any) {
       toast.error(error.message);
     }
@@ -572,8 +601,69 @@ export default function Home() {
                 <Users className="w-4 h-4" style={{ color: "#8B9B7A" }} />
                 <h3 className="typewriter text-sm font-medium" style={{ color: "#8B9B7A" }}>Kimi Takip Etmeli?</h3>
               </div>
+
+              {/* Kullanıcı arama kutusu */}
+              <div className="relative mb-4">
+                <Search
+                  className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5"
+                  style={{ color: "#9B9B8F" }}
+                />
+                <input
+                  type="text"
+                  value={userSearchQuery}
+                  onChange={(e) => setUserSearchQuery(e.target.value)}
+                  placeholder="Tanıdığın birini ara..."
+                  className="w-full pl-8 pr-3 py-1.5 typewriter text-xs"
+                  style={{
+                    background: "transparent",
+                    border: "1px solid #D4D2C8",
+                    borderRadius: "2px",
+                    color: "#2C2C28",
+                    outline: "none",
+                  }}
+                />
+              </div>
+
               <div className="space-y-4">
-                {suggestedUsers?.length > 0 ? (
+                {userSearchQuery.trim().length >= 2 ? (
+                  isSearchingUsers ? (
+                    <p className="text-[10px] handwritten text-center py-4" style={{ color: "#9B9B8F" }}>
+                      Araştırılıyor...
+                    </p>
+                  ) : userSearchResults.length > 0 ? (
+                    userSearchResults.map((u) => (
+                      <div key={u.id} className="flex items-center justify-between gap-3">
+                        <a href={`/profile/${u.id}`} className="flex items-center gap-2 overflow-hidden hover:opacity-70 transition-opacity">
+                          <div className="w-7 h-7 flex-shrink-0 bg-[#E8E6E0] flex items-center justify-center text-[0.6rem] typewriter border border-[#D4D2C8]">
+                            {u.username.substring(0, 2).toUpperCase()}
+                          </div>
+                          <div className="flex flex-col overflow-hidden">
+                            <span className="typewriter text-xs truncate" style={{ color: "#2C2C28" }}>@{u.username}</span>
+                            {u.fullName && (
+                              <span className="handwritten text-[10px] truncate" style={{ color: "#9B9B8F" }}>{u.fullName}</span>
+                            )}
+                          </div>
+                        </a>
+                        {u.isFollowing ? (
+                          <span className="text-[0.65rem] typewriter px-3 py-1 flex-shrink-0" style={{ color: "#9B9B8F" }}>
+                            Takip Ediliyor
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => handleFollow(u.id)}
+                            className="text-[0.65rem] typewriter px-3 py-1 border border-[#2C2C28] hover:bg-[#2C2C28] hover:text-white transition-colors flex-shrink-0"
+                          >
+                            Takip Et
+                          </button>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-[10px] handwritten text-center py-4" style={{ color: "#9B9B8F" }}>
+                      Kimse bulunamadı.
+                    </p>
+                  )
+                ) : suggestedUsers?.length > 0 ? (
                   suggestedUsers?.slice(0, 4).map((u) => (
                     <div key={u.id} className="flex items-center justify-between gap-3">
                       <a href={`/profile/${u.id}`} className="flex items-center gap-2 overflow-hidden hover:opacity-70 transition-opacity">

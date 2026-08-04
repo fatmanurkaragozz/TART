@@ -1,5 +1,6 @@
 import { motion } from "motion/react";
 import { Lightbulb } from "lucide-react";
+import { useNavigate } from "react-router";
 
 // Daily prompts - rotates daily
 const dailyPrompts = [
@@ -13,18 +14,31 @@ const dailyPrompts = [
 export function PromptCard() {
   // Pick a "daily" prompt (in real app, would rotate by date)
   const todayPrompt = dailyPrompts[new Date().getDate() % dailyPrompts.length];
+  const navigate = useNavigate();
+
+  const handleDiscuss = () => {
+    navigate("/create-topic", { state: { promptTitle: todayPrompt } });
+  };
 
   return (
     <motion.div
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.5, delay: 0.1 }}
+      whileHover={{ y: -2, boxShadow: "3px 3px 0px rgba(107, 107, 95, 0.25)" }}
+      onClick={handleDiscuss}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") handleDiscuss();
+      }}
       className="p-5 relative overflow-hidden"
       style={{
         background: "#FFFEF5",
         border: "1px solid #D4D2C8",
         borderRadius: "2px",
         boxShadow: "2px 2px 0px rgba(107, 107, 95, 0.15)",
+        cursor: "pointer",
       }}
     >
       {/* Sticky note accent - level 2 color */}
@@ -79,9 +93,9 @@ export function PromptCard() {
       {/* Small hint text */}
       <p
         className="mt-3 text-xs handwritten"
-        style={{ color: "#9B9B8F" }}
+        style={{ color: "#E85D4E" }}
       >
-        Fikrini paylaş, tartış
+        Fikrini paylaş, tartış →
       </p>
     </motion.div>
   );

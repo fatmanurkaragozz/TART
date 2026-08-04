@@ -190,6 +190,36 @@ class UserRepository {
         const shuffledUsers = users.sort(() => 0.5 - Math.random());
         return shuffledUsers.slice(0, 5);
     }
+
+    /**
+     * @desc    Kullanıcı adı veya ad-soyada göre kullanıcı ara
+     */
+    async searchUsers(query, currentUserId) {
+        if (!query || query.trim().length < 2) return [];
+
+        const users = await prisma.user.findMany({
+            where: {
+                id: { not: currentUserId },
+                OR: [
+                    { username: { contains: query.trim(), mode: 'insensitive' } },
+                    { fullName: { contains: query.trim(), mode: 'insensitive' } }
+                ]
+            },
+            take: 10,
+            select: {
+                id: true,
+                username: true,
+                fullName: true,
+                _count: { select: { followedBy: true } },
+                followedBy: { where: { id: currentUserId }, select: { id: true } }
+            }
+        });
+
+        return users.map(({ followedBy, ...user }) => ({
+            ...user,
+            isFollowing: followedBy.length > 0
+        }));
+    }
 }
 
 

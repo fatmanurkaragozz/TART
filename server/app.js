@@ -25,7 +25,7 @@ if (process.env.NODE_ENV !== 'production') {
 
 // 3. CORS Yapılandırması
 app.use(cors({
-    origin: process.env.CLIENT_URL || '*',
+    origin: process.env.CLIENT_URL,
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true
 }));
