@@ -78,6 +78,18 @@ class UserService {
     }
 
     /**
+     * @desc    Kullanıcı adı veya ad-soyada göre kullanıcı ara
+     */
+    async searchUsers(query: string) {
+        try {
+            const response = await api.get('/users/search', { params: { q: query } });
+            return response.data;
+        } catch (error: any) {
+            this.handleError(error);
+        }
+    }
+
+    /**
      * @desc    Merkezi Hata Yönetimi
      */
     private handleError(error: any) {
