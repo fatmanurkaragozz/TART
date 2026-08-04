@@ -1,6 +1,19 @@
 import nodemailer from 'nodemailer';
 
 /**
+ * @desc    HTML'e basılacak kullanıcı içeriğini kaçışlar (XSS/markup injection önlemi)
+ */
+function escapeHtml(value) {
+    if (typeof value !== 'string') return value;
+    return value
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+/**
  * @description E-posta Servis Katmanı
  */
 class EmailService {
@@ -22,6 +35,7 @@ class EmailService {
      * @param   {string} username 
      */
     async sendWelcomeEmail(to, username) {
+        const safeUsername = escapeHtml(username);
         const mailOptions = {
             from: `"TART Ekibi" <${process.env.EMAIL_FROM || 'noreply@tart.com'}>`,
             to,
@@ -29,7 +43,7 @@ class EmailService {
             html: `
                 <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px;">
                     <div style="text-align: center; margin-bottom: 30px;">
-                        <h1 style="color: #4f46e5; margin-bottom: 10px;">Merhaba ${username}!</h1>
+                        <h1 style="color: #4f46e5; margin-bottom: 10px;">Merhaba ${safeUsername}!</h1>
                         <p style="font-size: 18px; color: #374151;">TART topluluğuna katıldığın için çok mutluyuz.</p>
                     </div>
                     
@@ -104,6 +118,51 @@ class EmailService {
             console.log(`Password reset email sent to ${to}`);
         } catch (error) {
             console.error('Error sending password reset email:', error);
+        }
+    }
+    /**
+     * @desc    Bildirim e-postası gönder
+     * @param   {string} to
+     * @param   {string} username
+     * @param   {string} message
+     */
+    async sendNotificationEmail(to, username, message) {
+        const safeUsername = escapeHtml(username);
+        const safeMessage = escapeHtml(message);
+        const mailOptions = {
+            from: `"TART Ekibi" <${process.env.EMAIL_FROM || 'noreply@tart.com'}>`,
+            to,
+            subject: 'TART - Yeni Bildirim',
+            html: `
+                <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px;">
+                    <div style="text-align: center; margin-bottom: 30px;">
+                        <h1 style="color: #4f46e5; margin-bottom: 10px;">Merhaba ${safeUsername}</h1>
+                        <p style="font-size: 16px; color: #374151;">Yeni bir bildirimin var.</p>
+                    </div>
+
+                    <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin-bottom: 30px; border-left: 4px solid #4f46e5;">
+                        <p style="margin: 0; color: #374151; font-size: 16px;">${safeMessage}</p>
+                    </div>
+
+                    <div style="text-align: center;">
+                        <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/notifications" style="background-color: #4f46e5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Bildirimi Görüntüle</a>
+                    </div>
+
+                    <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+
+                    <div style="text-align: center; color: #9ca3af; font-size: 12px;">
+                        <p>Bu e-posta otomatik olarak gönderilmiştir, lütfen yanıtlamayınız.</p>
+                        <p>&copy; 2024 TART Project. Tüm hakları saklıdır.</p>
+                    </div>
+                </div>
+            `
+        };
+
+        try {
+            await this.transporter.sendMail(mailOptions);
+            console.log(`Notification email sent to ${to}`);
+        } catch (error) {
+            console.error('Error sending notification email:', error);
         }
     }
 }
