@@ -1,9 +1,11 @@
+🇹🇷 **Türkçe** (bu sayfa) | 🇬🇧 [English](README.en.md)
+
 <div align="center">
   <br />
   <img src="https://img.shields.io/badge/TART-Ele%C5%9Ftiri%20Toplulu%C4%9Fu-2C2C28?style=for-the-badge&logo=react&logoColor=61DAFB" alt="TART" />
   <br /><br />
 
-  <p><strong>Fikirlerin dengeli biçimde tartışıldığı, eleştirinin gelişime dönüştüğü modern, çapraz platformlu (Web + Mobil) bir topluluk platformu.</strong></p>
+  <p><strong>Üniversite öğrencileri ve fikir insanları için fikirlerin dengeli biçimde tartışıldığı, eleştirinin gelişime dönüştüğü modern, çapraz platformlu (Web + Mobil) bir tartışma ve topluluk platformu.</strong></p>
 
   <br />
 
@@ -15,10 +17,11 @@
   ![Prisma](https://img.shields.io/badge/Prisma-3982CE?style=flat-square&logo=Prisma&logoColor=white)
   ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=flat-square&logo=postgresql&logoColor=white)
   ![Supabase Security](https://img.shields.io/badge/Supabase_RLS-Active-3ECF8E?style=flat-square&logo=supabase&logoColor=white)
+  ![License](https://img.shields.io/github/license/fatmanurkaragozz/TART?style=flat-square)
 
   <br /><br />
 
-  [Ana Özellikler](#-ana-özellikler) • [Güvenlik & RLS](#-güvenlik--rls-katmanı) • [Kurulum Kılavuzu](#-kurulum-kılavuzu) • [Mimari Yapı](#-mimari-yapı) • [API Uçları](#-api-uçları) • [Geliştirme Yol Haritası](#-geliştirme-yol-haritası)
+  [Ana Özellikler](#-ana-özellikler) • [Güvenlik & RLS](#-güvenlik--rls-katmanı) • [Kurulum Kılavuzu](#-kurulum-kılavuzu) • [Mimari Yapı](#-mimari-yapı) • [API Uçları](#-api-uçları) • [Geliştirme Yol Haritası](#-geliştirme-yol-haritası) • [Katkıda Bulunma](#-katkıda-bulunma) • [Lisans](#-lisans)
 
   <br />
 </div>
@@ -63,7 +66,7 @@ Proje 3 ana katmandan oluşmaktadır: **Sunucu (Backend)**, **Web Arayüzü (Fro
 ```bash
 # Projeyi bilgisayarınıza indirin
 git clone https://github.com/fatmanurkaragozz/TART.git
-cd TART-project
+cd TART
 
 # Kök dizindeki ve web arayüzündeki ortak paketleri kurun
 npm install
@@ -114,7 +117,7 @@ npm run start
 TART Backend'i, endüstri standardı **Katmanlı Mimari (Layered Architecture)** deseniyle geliştirilmiştir:
 
 ```
-TART-project/
+TART/
 ├── 📁 prisma/                 # Prisma Şemaları ve Migrasyonlar
 │   └── schema.prisma          # Mükemmel tasarlanmış PostgreSQL modelleri
 │
@@ -170,6 +173,18 @@ Proje, 12 haftalık planlanan hedeflerinin ötesine geçerek tüm kritik ve iler
 *   [x] **Aşama 4 (Hafta 8-9):** Supabase RLS Güvenlik Sertleştirmesi ve Veritabanı İndeksleme Optimizasyonları (Hız Artırımı)
 *   [x] **Aşama 5 (Hafta 10-11):** Mobil UI/UX Uyumlaştırması (Expo Go + NativeWind), Azure CI/CD Pipeline Yapılandırması
 *   [x] **Aşama 6 (Hafta 12):** Açık Kaynak Dağıtımı ve Dokümantasyon (.env.example ile Güvenli Dağıtım)
+
+---
+
+## 🤝 Katkıda Bulunma
+
+Katkılarınızı memnuniyetle karşılıyoruz! Hata bildirmek veya özellik önermek için [Issues](../../issues) sekmesini kullanabilirsiniz — hazır şablonlar mevcuttur. Kod katkısı ve süreç detayları için [CONTRIBUTING.md](CONTRIBUTING.md) dosyasına bakın.
+
+---
+
+## 📄 Lisans
+
+Bu proje [MIT Lisansı](LICENSE) ile lisanslanmıştır. Üçüncü taraf varlıklar (asset) ve bunların lisansları için [ATTRIBUTIONS.md](ATTRIBUTIONS.md) dosyasına bakabilirsiniz.
 
 ---
 

@@ -1,8 +1,24 @@
 {
-  "name": "@figma/my-make-file",
+  "name": "tart",
   "private": true,
   "version": "0.0.1",
   "type": "module",
+  "description": "TART — Türkiye'deki üniversite öğrencileri için fikirlerin dengeli biçimde tartışıldığı bir tartışma ve topluluk platformu. A discussion and community platform for university students.",
+  "keywords": [
+    "tartışma platformu",
+    "öğrenci topluluğu",
+    "üniversite öğrencileri",
+    "eleştiri kültürü",
+    "discussion platform",
+    "community platform",
+    "university students",
+    "react",
+    "nodejs",
+    "prisma",
+    "postgresql",
+    "expo"
+  ],
+  "license": "MIT",
   "scripts": {
     "start": "node server/server.js",
     "start:frontend": "npx serve -s dist -l 8080",
