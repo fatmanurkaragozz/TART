@@ -1,0 +1,57 @@
+name: "🐛 Hata Bildirimi / Bug Report"
+description: "Bir şeyin beklendiği gibi çalışmadığını bildirin. / Report something that isn't working as expected."
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Hata bildirdiğiniz için teşekkürler! / Thanks for taking the time to report a bug!
+  - type: textarea
+    id: description
+    attributes:
+      label: "Açıklama / Description"
+      description: "Hatayı kısaca anlatın. / Describe the bug clearly."
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: "Tekrar Etme Adımları / Steps to Reproduce"
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: "Beklenen Davranış / Expected Behavior"
+    validations:
+      required: false
+  - type: dropdown
+    id: area
+    attributes:
+      label: "Etkilenen Alan / Affected Area"
+      options:
+        - "Web (Frontend)"
+        - "Backend / API"
+        - "Mobil / Mobile (Expo)"
+        - "Diğer / Other"
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: "Ortam / Environment"
+      placeholder: "OS, tarayıcı, Node sürümü, cihaz vb. / OS, browser, Node version, device, etc."
+    validations:
+      required: false
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: "Kontrol Listesi / Checklist"
+      options:
+        - label: "Bu konuda açılmış başka bir issue olmadığını kontrol ettim. / I checked there isn't already an open issue for this."
+          required: true
