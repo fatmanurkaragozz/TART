@@ -1,9 +1,11 @@
 ### TART API Test Dosyası
 # Bu dosyayı kullanmak için VS Code'da "REST Client" eklentisini kurun.
+# Kendi yerel testleriniz için bu dosyayı "api_tests.http" olarak kopyalayın
+# ve gerçek test bilgilerinizi girin (o dosya .gitignore'dadır, commit'lenmez).
 
 @baseUrl = http://localhost:5000/api/v1
-@email = fk6895164@gmail.com
-@password = 123456
+@email = test@example.com
+@password = ChangeMe123!
 
 ### 1. Kayıt Ol (Opsiyonel - Eğer kullanıcı yoksa)
 POST {{baseUrl}}/auth/register
