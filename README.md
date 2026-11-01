@@ -168,7 +168,7 @@ Proje, 12 haftalık planlanan hedeflerinin ötesine geçerek tüm kritik ve iler
 *   [x] **Aşama 2 (Hafta 4-5):** Tartışma, Detaylı Yorum, Alt Yorum Yanıtları ve Oylama Sistemleri
 *   [x] **Aşama 3 (Hafta 6-7):** Takip Sistemi, Profil Sayfaları, E-posta Entegrasyonu ve Mobil-Web Veri Eşitlemesi
 *   [x] **Aşama 4 (Hafta 8-9):** Supabase RLS Güvenlik Sertleştirmesi ve Veritabanı İndeksleme Optimizasyonları (Hız Artırımı)
-*   [x] **Aşama 5 (Hafta 10-11):** Mobil UI/UX Uyumlaştırması (Expo Go + NativeWind), Azure CI/CD Pipeline Yapılandırması
+*   [x] **Aşama 5 (Hafta 10-11):** Mobil UI/UX Uyumlaştırması (Expo Go + NativeWind), Canlıya Alma (Render + Vercel + Supabase)
 *   [x] **Aşama 6 (Hafta 12):** Açık Kaynak Dağıtımı ve Dokümantasyon (.env.example ile Güvenli Dağıtım)
 
 ---
