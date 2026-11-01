@@ -19,6 +19,9 @@ const errorHandler = (err, req, res, next) => {
 
     if (process.env.NODE_ENV === 'development') {
         console.error(err);
+    } else if (!err.isOperational) {
+        // Production'da istemciye genel mesaj dönüyoruz; gerçek sebep yalnızca sunucu loglarında görünür.
+        console.error(`[${req.method} ${req.originalUrl}] ${err.name}: ${err.message}`);
     }
 
     res.status(response.code).send(response);

@@ -32,6 +32,8 @@ export const protect = async (req, res, next) => {
         next();
 
     } catch (error) {
+        // Tüm hatalar 401'e çevrildiği için gerçek sebebi (geçersiz token mu, DB hatası mı) loglarda görebilmek için.
+        console.error(`protect middleware hatası [${error.name}]:`, error.message);
         return next(new ApiError(401, 'Yetkisiz erişim'));
     }
 };
