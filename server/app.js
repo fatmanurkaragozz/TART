@@ -24,9 +24,11 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 // 3. CORS Yapılandırması
+// CLIENT_URL virgülle ayrılmış birden fazla origin içerebilir (örn. Vercel + localhost).
+const allowedOrigins = process.env.CLIENT_URL.split(',').map((o) => o.trim().replace(/\/$/, ''));
 app.use(cors({
-    origin: process.env.CLIENT_URL,
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    origin: allowedOrigins,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
     credentials: true
 }));
 
